@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriTrace: Blockchain Supply Chain Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-primary {
+            transition: background-color 0.3s ease;
+        }
+        .ledger-entry {
+            border-left-width: 4px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal {
+            display: none;
+            animation: fadeInModal 0.3s ease-out;
+        }
+        .modal.show {
+            display: flex;
+        }
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .main-app-container { display: none; }
+        .batch-card { transition: all 0.2s ease-in-out; }
+        .batch-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); }
+        .qa-form {
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Login Container -->
+    <div id="login-container" class="min-h-screen flex items-center justify-center bg-green-50 p-4">
+        <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-green-700">AgriTrace Farmer Portal</h1>
+                <p class="text-gray-500 mt-2">Login to manage your produce</p>
+            </div>
+            <form id="login-form">
+                <div class="space-y-6">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700">Farmer ID</label>
+                        <input type="text" id="username" value="FARMER_OD123" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="password" value="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 btn-primary">
+                        Login
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Main App Container -->
+    <div class="main-app-container p-4 sm:p-6 lg:p-8">
+        <div class="max-w-7xl mx-auto">
+            <header class="text-center mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-green-700">Farmer Dashboard</h1>
+                <p class="text-gray-600 mt-2">Add and track your product batches through the supply chain.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left Column: Add Product -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
+                        <h2 class="text-2xl font-semibold text-center lg:text-left mb-4">Add New Product Batch</h2>
+                        <form id="farm-form">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="crop-type" class="block text-sm font-medium text-gray-700">Crop Type</label>
+                                    <input type="text" id="crop-type" placeholder="e.g., Organic Tomatoes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                                </div>
+                                <div>
+                                    <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity (kg)</label>
+                                    <input type="number" id="quantity" placeholder="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                                </div>
+                                <div>
+                                    <label for="initial-quality" class="block text-sm font-medium text-gray-700">Initial Quality</label>
+                                    <select id="initial-quality" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+                                        <option>Premium</option>
+                                        <option>Good</option>
+                                        <option>Standard</option>
+                                    </select>
+                                </div>
+                                 <div>
+                                    <label for="harvest-date" class="block text-sm font-medium text-gray-700">Harvest Date</label>
+                                    <input type="date" id="harvest-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                                </div>
+                                <div>
+                                    <label for="crop-image" class="block text-sm font-medium text-gray-700">Harvest Crop Image</label>
+                                    <input type="file" id="crop-image" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" required>
+                                </div>
+                                <img id="image-preview" src="" alt="Image Preview" class="hidden w-full h-auto rounded-lg mt-2"/>
+                                <button type="submit" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 btn-primary">
+                                    Create Batch
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right Column: Batch List -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-3">Products in Supply Chain</h2>
+                    <div id="batch-list-container" class="space-y-4">
+                        <p id="batch-placeholder" class="text-gray-500">No active batches. Add a new product to begin.</p>
+                        <!-- Batch cards will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Details Modal -->
+    <div id="batch-details-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+             <div class="p-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 id="modal-title" class="text-xl font-bold text-green-700">Batch Details</h3>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+                </div>
+             </div>
+             <div id="modal-content" class="p-6 overflow-y-auto">
+                <!-- Modal content will be injected here -->
+             </div>
+        </div>
+    </div>
+
+    <script>
+    // --- DOM Elements ---
+    const loginContainer = document.getElementById('login-container');
+    const mainAppContainer = document.querySelector('.main-app-container');
+    const loginForm = document.getElementById('login-form');
+    const farmForm = document.getElementById('farm-form');
+    const cropImageInput = document.getElementById('crop-image');
+    const imagePreview = document.getElementById('image-preview');
+    const batchListContainer = document.getElementById('batch-list-container');
+    const batchPlaceholder = document.getElementById('batch-placeholder');
+    
+    const modal = document.getElementById('batch-details-modal');
+    const closeModalBtn = document.getElementById('close-modal');
+    const modalContent = document.getElementById('modal-content');
+    const modalTitle = document.getElementById('modal-title');
+
+    // --- State Management ---
+    let batches = []; // Array to hold all product batches
+
+    // --- Functions ---
+
+    /**
+     * Renders all batches to the main dashboard.
+     */
+    function renderBatches() {
+        if (batches.length > 0) {
+            batchPlaceholder.style.display = 'none';
+        } else {
+            batchPlaceholder.style.display = 'block';
+        }
+        batchListContainer.innerHTML = '';
+
+        batches.forEach(batch => {
+            const statusInfo = getStatusInfo(batch.status);
+            const card = document.createElement('div');
+            card.className = 'batch-card bg-white p-4 border border-gray-200 rounded-lg flex justify-between items-center';
+            card.innerHTML = `
+                <div class="flex items-center">
+                     <img src="${batch.details.imageUrl || 'https://placehold.co/60x60/e2e8f0/333?text=Crop'}" alt="Crop Image" class="w-12 h-12 rounded-md object-cover mr-4">
+                    <div>
+                        <p class="font-bold text-lg">${batch.details.crop}</p>
+                        <p class="text-sm text-gray-500">${batch.details.quantity} - Harvest: ${batch.details.harvestDate}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-sm font-semibold px-3 py-1 rounded-full ${statusInfo.bgColor} ${statusInfo.textColor}">${statusInfo.text}</span>
+                    <button data-id="${batch.id}" class="view-details-btn mt-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded-lg">View Details</button>
+                </div>
+            `;
+            batchListContainer.appendChild(card);
+        });
+    }
+    
+    /**
+     * Advances the supply chain stage for a specific batch.
+     * @param {number} batchId - The ID of the batch to update.
+     * @param {string} actor - The actor performing the action.
+     * @param {string} action - Description of the action.
+     * @param {string} nextStatus - The new status of the batch.
+     * @param {object} data - Optional data for the block.
+     */
+    function advanceStage(batchId, actor, action, nextStatus, data = null) {
+        const batch = batches.find(b => b.id === batchId);
+        if (!batch) return;
+
+        const newBlock = {
+            index: batch.blockchain.length + 1,
+            timestamp: new Date().toLocaleString(),
+            actor, action, data
+        };
+        batch.blockchain.push(newBlock);
+        batch.status = nextStatus;
+        
+        openBatchModal(batchId); // Re-render the modal with updated state
+        renderBatches(); // Re-render the dashboard list
+    }
+
+    /**
+     * Opens and populates the details modal for a specific batch.
+     * @param {number} batchId - The ID of the batch to display.
+     */
+    function openBatchModal(batchId) {
+        const batch = batches.find(b => b.id === batchId);
+        if (!batch) return;
+
+        modalTitle.textContent = `Batch #${batch.id} - ${batch.details.crop}`;
+        
+        // --- Build Modal HTML ---
+        let modalHTML = `
+            <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                <h4 class="text-lg font-semibold mb-3 text-gray-800">Initial Batch Information</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-1">
+                        <img src="${batch.details.imageUrl}" alt="Harvested Crop" class="w-full h-auto rounded-lg object-cover">
+                    </div>
+                    <div class="md:col-span-2 text-sm text-gray-700 space-y-2">
+                        <p><strong>Quantity:</strong> ${batch.details.quantity}</p>
+                        <p><strong>Harvest Date:</strong> ${batch.details.harvestDate}</p>
+                        <p><strong>Initial Quality Recorded:</strong> <span class="font-semibold text-green-700">${batch.details.initialQuality}</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        `;
+        
+        // Left side: Actions
+        modalHTML += `<div><h4 class="text-lg font-semibold mb-3">Actions & Quality Assurance</h4>`;
+        modalHTML += generateActionForms(batch);
+        modalHTML += `</div>`;
+        
+        // Right side: Ledger
+        modalHTML += `<div><h4 class="text-lg font-semibold mb-3">Blockchain Ledger</h4><div class="space-y-3">`;
+        batch.blockchain.forEach(block => {
+            modalHTML += generateLedgerEntry(block);
+        });
+        modalHTML += `</div></div></div>`;
+
+        modalContent.innerHTML = modalHTML;
+        modal.classList.add('show');
+
+        // Add event listeners to the new forms in the modal
+        addModalFormListeners(batchId);
+    }
+    
+    /**
+     * Generates the correct action forms based on the batch's current status.
+     * @param {object} batch - The batch object.
+     * @returns {string} HTML string for the forms.
+     */
+    function generateActionForms(batch) {
+        let formsHTML = '';
+        const isDisabled = (status) => batch.status !== status;
+        
+        // Distributor QA Form
+        formsHTML += `
+            <form id="distributor-qa-form" class="qa-form ${isDisabled('AT_FARM') ? 'opacity-50 pointer-events-none' : ''}">
+                <p class="font-semibold text-blue-800">1. Distributor Pickup</p>
+                <div class="my-2">
+                    <label class="block text-sm font-medium">Condition on Pickup:</label>
+                    <select id="distributor-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                        <option>Good</option>
+                        <option>Slightly Bruised</option>
+                        <option>Damaged</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-blue-600 hover:bg-blue-700">Log Pickup</button>
+            </form>`;
+
+        // Warehouse QA Form
+        formsHTML += `
+            <form id="warehouse-qa-form" class="qa-form ${isDisabled('IN_TRANSIT') ? 'opacity-50 pointer-events-none' : ''}">
+                <p class="font-semibold text-indigo-800">2. Warehouse Arrival</p>
+                <div class="my-2">
+                    <label class="block text-sm font-medium">Condition on Arrival:</label>
+                    <select id="warehouse-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                        <option>Good</option>
+                        <option>Slightly Bruised</option>
+                        <option>Damaged</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-indigo-600 hover:bg-indigo-700">Log Arrival</button>
+            </form>`;
+
+        // Final Grader QA Form
+        formsHTML += `<div class="qa-form ${isDisabled('AT_WAREHOUSE') ? 'opacity-50 pointer-events-none' : ''}">
+            <p class="font-semibold text-teal-800">3. Final Quality Grading</p>
+            <div class="grid grid-cols-2 gap-2 my-2">
+                <button data-grade="A" class="action-quality-btn w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-3 rounded-lg">Premium (A)</button>
+                <button data-grade="B" class="action-quality-btn w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-3 rounded-lg">Standard (B)</button>
+            </div>
+            <button data-grade="REJECT" class="action-quality-btn w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg mt-2">Reject Batch</button>
+        </div>`;
+
+        // Retailer QA Form
+        formsHTML += `
+            <form id="retailer-qa-form" class="qa-form ${isDisabled('QUALITY_CHECKED') ? 'opacity-50 pointer-events-none' : ''}">
+                <p class="font-semibold text-yellow-800">4. Retailer Delivery</p>
+                <div class="my-2">
+                    <label class="block text-sm font-medium">Condition on Delivery:</label>
+                    <select id="retailer-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                        <option>Good</option>
+                        <option>Minor Damage</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-yellow-600 hover:bg-yellow-700">Log Delivery</button>
+            </form>`;
+
+        if (batch.status === 'REJECTED') {
+            formsHTML += `<div class="mt-4 p-3 bg-red-100 text-red-700 font-bold text-center rounded-lg">BATCH REJECTED</div>`;
+        }
+        
+        return formsHTML;
+    }
+
+    /**
+     * Adds event listeners for the dynamically created forms inside the modal.
+     * @param {number} batchId - The ID of the batch being interacted with.
+     */
+    function addModalFormListeners(batchId) {
+        document.getElementById('distributor-qa-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const condition = document.getElementById('distributor-condition').value;
+            advanceStage(batchId, 'DISTRIBUTOR', 'Produce Pickup', 'IN_TRANSIT', { condition });
+        });
+        
+        document.getElementById('warehouse-qa-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const condition = document.getElementById('warehouse-condition').value;
+            advanceStage(batchId, 'WAREHOUSE', 'Received at Warehouse', 'AT_WAREHOUSE', { condition });
+        });
+
+        document.getElementById('retailer-qa-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const condition = document.getElementById('retailer-condition').value;
+            advanceStage(batchId, 'RETAILER', 'Delivered to Store', 'AT_RETAILER', { condition });
+        });
+
+        document.querySelectorAll('.action-quality-btn')?.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const grade = btn.dataset.grade;
+                const pricing = { 'A': 1.50, 'B': 1.00 };
+                if (grade === 'REJECT') {
+                    advanceStage(batchId, 'QUALITY_INSPECTOR', 'Batch Rejected', 'REJECTED', { reason: 'Failed quality standards' });
+                } else {
+                    advanceStage(batchId, 'QUALITY_INSPECTOR', 'Quality Approved', 'QUALITY_CHECKED', { finalGrade: grade, pricePerKg: pricing[grade] });
+                }
+            });
+        });
+    }
+
+    /**
+     * Generates a single HTML ledger entry.
+     * @param {object} block - A block from the blockchain.
+     * @returns {string} HTML string for the ledger entry.
+     */
+    function generateLedgerEntry(block) {
+        const icons = { 'FARMER': '🌱', 'DISTRIBUTOR': '🚚', 'WAREHOUSE': '🏢', 'QUALITY_INSPECTOR': '✅', 'RETAILER': '🛒' };
+        const colors = { 'FARMER': 'green', 'DISTRIBUTOR': 'blue', 'WAREHOUSE': 'indigo', 'QUALITY_INSPECTOR': 'teal', 'RETAILER': 'yellow' };
+        
+        let actor = block.actor;
+        if (actor === 'QUALITY_INSPECTOR' && block.action.includes('Rejected')) {
+            icons.QUALITY_INSPECTOR = '❌';
+            colors.QUALITY_INSPECTOR = 'red';
+        }
+        
+        let dataHTML = '';
+        if (block.data) {
+             let dataContent = Object.entries(block.data).map(([key, value]) => `<span class="font-semibold">${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</span> ${value}`).join('; ');
+             dataHTML = `<p class="text-xs text-gray-600 mt-1 bg-gray-100 p-2 rounded-md"><strong>Data:</strong> ${dataContent}</p>`;
+        }
+
+        return `
+            <div class="p-3 rounded-lg ledger-entry border-${colors[actor]}-500 bg-${colors[actor]}-50">
+                <div class="flex items-start">
+                    <span class="text-xl mr-3">${icons[actor]}</span>
+                    <div>
+                        <p class="font-semibold text-sm text-${colors[actor]}-800">${block.action}</p>
+                        <p class="text-xs text-gray-600">${block.actor} @ ${block.timestamp}</p>
+                        ${dataHTML}
+                    </div>
+                </div>
+            </div>`;
+    }
+    
+    /**
+     * Gets display info (text, color) for a given status.
+     */
+    function getStatusInfo(status) {
+        switch(status) {
+            case 'AT_FARM': return { text: 'At Farm', textColor: 'text-green-800', bgColor: 'bg-green-100' };
+            case 'IN_TRANSIT': return { text: 'In Transit', textColor: 'text-blue-800', bgColor: 'bg-blue-100' };
+            case 'AT_WAREHOUSE': return { text: 'At Warehouse', textColor: 'text-indigo-800', bgColor: 'bg-indigo-100' };
+            case 'QUALITY_CHECKED': return { text: 'Quality Checked', textColor: 'text-teal-800', bgColor: 'bg-teal-100' };
+            case 'AT_RETAILER': return { text: 'At Retailer', textColor: 'text-yellow-800', bgColor: 'bg-yellow-100' };
+            case 'REJECTED': return { text: 'Rejected', textColor: 'text-red-800', bgColor: 'bg-red-100' };
+            default: return { text: 'Unknown', textColor: 'text-gray-800', bgColor: 'bg-gray-100' };
+        }
+    }
+
+
+    // --- Event Listeners ---
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        loginContainer.style.display = 'none';
+        mainAppContainer.style.display = 'block';
+    });
+    
+    cropImageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            imagePreview.src = URL.createObjectURL(file);
+            imagePreview.classList.remove('hidden');
+        }
+    });
+
+    farmForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const crop = document.getElementById('crop-type').value;
+        const quantity = document.getElementById('quantity').value;
+        const initialQuality = document.getElementById('initial-quality').value;
+        const harvestDate = document.getElementById('harvest-date').value;
+        const imageFile = document.getElementById('crop-image').files[0];
+
+        if (!harvestDate || !imageFile) {
+            alert("Please fill out all fields, including harvest date and image.");
+            return;
+        }
+
+        const newBatch = {
+            id: Date.now(),
+            details: { 
+                crop, 
+                quantity: `${quantity} kg`,
+                initialQuality,
+                harvestDate,
+                imageUrl: URL.createObjectURL(imageFile)
+            },
+            status: 'AT_FARM',
+            blockchain: [{
+                index: 1,
+                timestamp: new Date().toLocaleString(),
+                actor: 'FARMER',
+                action: 'Batch Created (Genesis Block)',
+                data: { origin: 'Odisha Farm Co-op', harvestDate, initialQuality }
+            }]
+        };
+
+        batches.push(newBatch);
+        renderBatches();
+        farmForm.reset();
+        imagePreview.classList.add('hidden');
+    });
+
+    batchListContainer.addEventListener('click', (e) => {
+        if (e.target && e.target.classList.contains('view-details-btn')) {
+            const batchId = parseInt(e.target.dataset.id);
+            openBatchModal(batchId);
+        }
+    });
+
+    closeModalBtn.addEventListener('click', () => modal.classList.remove('show'));
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
+
+    // --- Initial Render ---
+    renderBatches();
+
+    </script>
+</body>
+</html>
+
