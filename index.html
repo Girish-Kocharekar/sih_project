@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -33,7 +34,7 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        .main-app-container { display: none; }
+        .dashboard { display: none; }
         .batch-card { transition: all 0.2s ease-in-out; }
         .batch-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); }
         .qa-form {
@@ -50,43 +51,59 @@
     <div id="login-container" class="min-h-screen flex items-center justify-center bg-green-50 p-4">
         <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-green-700">AgriTrace Farmer Portal</h1>
-                <p class="text-gray-500 mt-2">Login to manage your produce</p>
+                <h1 class="text-3xl font-bold text-green-700">AgriTrace Portal</h1>
+                <p class="text-gray-500 mt-2">Login to your account</p>
             </div>
             <form id="login-form">
                 <div class="space-y-6">
                     <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700">Farmer ID</label>
-                        <input type="text" id="username" value="FARMER_OD123" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                        <label for="username" class="block text-sm font-medium text-gray-700">User ID</label>
+                        <input type="text" id="username" placeholder="e.g., FARMER_OD123" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
                     </div>
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
                         <input type="password" id="password" value="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
                     </div>
+                     <p id="login-error" class="text-red-500 text-sm hidden">Invalid credentials. Please try again.</p>
                     <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 btn-primary">
                         Login
                     </button>
                 </div>
             </form>
+            <div class="text-center mt-6">
+                <button type="button" id="how-to-use-btn" class="text-green-600 hover:text-green-800 text-sm font-medium underline">How to use this application?</button>
+            </div>
+             <div class="mt-4 text-xs text-gray-500 text-center">
+                <p class="font-bold">Test Accounts (pw: "password"):</p>
+                <p>FARMER_OD123, DIST_01, WAREHOUSE_01, INSPECTOR_01, RETAILER_01</p>
+            </div>
         </div>
     </div>
 
+    <!-- Universal Header for Dashboards -->
+    <header id="app-header" class="bg-white shadow-sm p-4 hidden">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-green-700">AgriTrace</h1>
+            <div>
+                <span id="user-info" class="text-sm text-gray-600 mr-4"></span>
+                <button id="logout-btn" class="text-sm bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600">Logout</button>
+            </div>
+        </div>
+    </header>
 
-    <!-- Main App Container -->
-    <div class="main-app-container p-4 sm:p-6 lg:p-8">
+    <!-- Farmer Dashboard -->
+    <div id="farmer-dashboard" class="dashboard p-4 sm:p-6 lg:p-8">
         <div class="max-w-7xl mx-auto">
             <header class="text-center mb-8">
-                <h1 class="text-3xl sm:text-4xl font-bold text-green-700">Farmer Dashboard</h1>
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Farmer Dashboard</h1>
                 <p class="text-gray-600 mt-2">Add and track your product batches through the supply chain.</p>
             </header>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                <!-- Left Column: Add Product -->
                 <div class="lg:col-span-1 space-y-6">
                     <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
-                        <h2 class="text-2xl font-semibold text-center lg:text-left mb-4">Add New Product Batch</h2>
+                        <h2 class="text-2xl font-semibold mb-4">Add New Product Batch</h2>
                         <form id="farm-form">
+                            <!-- Form fields from previous version -->
                             <div class="space-y-4">
                                 <div>
                                     <label for="crop-type" class="block text-sm font-medium text-gray-700">Crop Type</label>
@@ -120,15 +137,40 @@
                         </form>
                     </div>
                 </div>
-
-                <!-- Right Column: Batch List -->
                 <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg border border-gray-200">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-3">Products in Supply Chain</h2>
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-3">My Products in Supply Chain</h2>
                     <div id="batch-list-container" class="space-y-4">
                         <p id="batch-placeholder" class="text-gray-500">No active batches. Add a new product to begin.</p>
-                        <!-- Batch cards will be injected here -->
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logistics Dashboard -->
+    <div id="logistics-dashboard" class="dashboard p-4 sm:p-6 lg:p-8">
+        <div class="max-w-4xl mx-auto">
+            <header class="text-center mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Logistics Dashboard</h1>
+                <p class="text-gray-600 mt-2">Scan a batch QR code to view details and perform actions.</p>
+            </header>
+            <div class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
+                <form id="scan-form">
+                    <label for="scan-input" class="block text-lg font-medium text-gray-700">Enter or Scan Batch ID</label>
+                    <div class="mt-2 flex items-center space-x-2">
+                         <input type="text" id="scan-input" placeholder="e.g., 167..." class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-lg" required>
+                         <button type="button" id="scan-qr-btn" class="p-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800" aria-label="Scan QR Code">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h-1m-1-6v1M4 12H3m1-6h1m11 1V6m-1 11v-1m-5-6a3 3 0 100-6 3 3 0 000 6z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V6a2 2 0 012-2h2M4 16v2a2 2 0 002 2h2M16 4h2a2 2 0 012 2v2M16 20h2a2 2 0 002-2v-2" />
+                            </svg>
+                         </button>
+                    </div>
+                    <button type="submit" class="mt-4 w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 btn-primary">
+                        Find Batch
+                    </button>
+                </form>
+                <p id="scan-error" class="text-red-500 text-sm mt-2 hidden">Batch not found.</p>
             </div>
         </div>
     </div>
@@ -136,15 +178,11 @@
     <!-- Batch Details Modal -->
     <div id="batch-details-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
-             <div class="p-4 border-b border-gray-200">
-                <div class="flex justify-between items-center">
-                    <h3 id="modal-title" class="text-xl font-bold text-green-700">Batch Details</h3>
-                    <button id="close-modal" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
-                </div>
+             <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="modal-title" class="text-xl font-bold text-green-700">Batch Details</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
              </div>
-             <div id="modal-content" class="p-6 overflow-y-auto">
-                <!-- Modal content will be injected here -->
-             </div>
+             <div id="modal-content" class="p-6 overflow-y-auto"></div>
         </div>
     </div>
     
@@ -160,18 +198,99 @@
             </div>
         </div>
     </div>
+    
+    <!-- QR Scanner Modal -->
+    <div id="qr-scanner-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-md text-center p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Scan Batch QR Code</h3>
+            <div id="reader" class="w-full border-2 border-gray-300 rounded-lg overflow-hidden"></div>
+            <button id="close-scanner-modal" class="mt-4 w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400">Cancel</button>
+        </div>
+    </div>
+    
+    <!-- Instructions Modal -->
+    <div id="instructions-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                 <h3 class="text-xl font-bold text-gray-800">How to Use AgriTrace Simulation</h3>
+                 <button id="close-instructions-modal" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto text-gray-700 space-y-4">
+                <div>
+                    <h4 class="font-bold text-lg">Step 1: Create a Product (as a Farmer)</h4>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
+                        <li>Login using the ID <code class="bg-gray-200 px-1 rounded">FARMER_OD123</code> and password <code class="bg-gray-200 px-1 rounded">password</code>.</li>
+                        <li>Fill out the "Add New Product Batch" form with crop details and an image.</li>
+                        <li>Click "Create Batch". A new card will appear on the right.</li>
+                        <li>Click "Show QR" on the new batch. Note down the Batch ID (e.g., 167...). This is your product's unique identifier.</li>
+                        <li>Log out.</li>
+                    </ol>
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg">Step 2: Process the Product (as Logistics)</h4>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
+                        <li>Login as the first logistics user: <code class="bg-gray-200 px-1 rounded">DIST_01</code>.</li>
+                        <li>On the dashboard, either type the Batch ID from Step 1 into the input field or click the QR icon to scan it with your camera.</li>
+                        <li>Click "Find Batch". A details window will appear.</li>
+                        <li>Only the "Distributor Pickup" form will be active. Fill it out and click "Log Pickup". The blockchain ledger will update.</li>
+                        <li>Close the details window and log out.</li>
+                    </ol>
+                </div>
+                 <div>
+                    <h4 class="font-bold text-lg">Step 3: Continue the Chain</h4>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
+                        <li>Repeat Step 2 for each user in the supply chain in this order:</li>
+                        <li class="ml-4">-> Login as <code class="bg-gray-200 px-1 rounded">WAREHOUSE_01</code> (Logs warehouse arrival)</li>
+                        <li class="ml-4">-> Login as <code class="bg-gray-200 px-1 rounded">INSPECTOR_01</code> (Performs final quality grade)</li>
+                        <li class="ml-4">-> Login as <code class="bg-gray-200 px-1 rounded">RETAILER_01</code> (Logs delivery to store)</li>
+                        <li>Each user can only perform their specific action.</li>
+                    </ol>
+                </div>
+                 <div>
+                    <h4 class="font-bold text-lg">Step 4: Verify History</h4>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
+                        <li>Log back in as the Farmer (<code class="bg-gray-200 px-1 rounded">FARMER_OD123</code>).</li>
+                        <li>Notice that the status on the batch card has updated.</li>
+                        <li>Click "Details" on the batch to see the complete, unchangeable history of every action on the blockchain ledger.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <script>
+    // --- MOCK USER DATABASE ---
+    const users = {
+        "FARMER_OD123": { password: "password", role: "FARMER" },
+        "DIST_01": { password: "password", role: "DISTRIBUTOR" },
+        "WAREHOUSE_01": { password: "password", role: "WAREHOUSE" },
+        "INSPECTOR_01": { password: "password", role: "QUALITY_INSPECTOR" },
+        "RETAILER_01": { password: "password", role: "RETAILER" }
+    };
+
     // --- DOM Elements ---
     const loginContainer = document.getElementById('login-container');
-    const mainAppContainer = document.querySelector('.main-app-container');
     const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const appHeader = document.getElementById('app-header');
+    const userInfo = document.getElementById('user-info');
+    const logoutBtn = document.getElementById('logout-btn');
+    const howToUseBtn = document.getElementById('how-to-use-btn');
+    
+    const farmerDashboard = document.getElementById('farmer-dashboard');
+    const logisticsDashboard = document.getElementById('logistics-dashboard');
+    
     const farmForm = document.getElementById('farm-form');
     const cropImageInput = document.getElementById('crop-image');
     const imagePreview = document.getElementById('image-preview');
     const batchListContainer = document.getElementById('batch-list-container');
     const batchPlaceholder = document.getElementById('batch-placeholder');
+
+    const scanForm = document.getElementById('scan-form');
+    const scanInput = document.getElementById('scan-input');
+    const scanError = document.getElementById('scan-error');
+    const scanQrBtn = document.getElementById('scan-qr-btn');
     
     const modal = document.getElementById('batch-details-modal');
     const closeModalBtn = document.getElementById('close-modal');
@@ -181,17 +300,69 @@
     const qrModal = document.getElementById('qr-code-modal');
     const closeQrModalBtn = document.getElementById('close-qr-modal');
     const printQrBtn = document.getElementById('print-qr');
+    
+    const qrScannerModal = document.getElementById('qr-scanner-modal');
+    const closeScannerModalBtn = document.getElementById('close-scanner-modal');
+    
+    const instructionsModal = document.getElementById('instructions-modal');
+    const closeInstructionsModalBtn = document.getElementById('close-instructions-modal');
 
 
     // --- State Management ---
     let batches = []; // Array to hold all product batches
+    let currentUser = null;
+    let html5QrCode;
 
     // --- Functions ---
+    
+    /**
+     * Handles user login
+     */
+    function handleLogin(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const user = users[username];
+
+        if (user && user.password === password) {
+            currentUser = { id: username, role: user.role };
+            loginContainer.style.display = 'none';
+            appHeader.style.display = 'flex';
+            userInfo.textContent = `Logged in as: ${currentUser.id} (${currentUser.role})`;
+
+            if (currentUser.role === 'FARMER') {
+                farmerDashboard.style.display = 'block';
+                renderBatches();
+            } else {
+                logisticsDashboard.style.display = 'block';
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("reader");
+                }
+            }
+            loginError.classList.add('hidden');
+        } else {
+            loginError.classList.remove('hidden');
+        }
+    }
 
     /**
-     * Renders all batches to the main dashboard.
+     * Handles user logout
+     */
+    function handleLogout() {
+        currentUser = null;
+        appHeader.style.display = 'none';
+        farmerDashboard.style.display = 'none';
+        logisticsDashboard.style.display = 'none';
+        loginContainer.style.display = 'flex';
+        document.getElementById('login-form').reset();
+    }
+
+
+    /**
+     * Renders all batches to the farmer's dashboard.
      */
     function renderBatches() {
+        if (!currentUser || currentUser.role !== 'FARMER') return;
         if (batches.length > 0) {
             batchPlaceholder.style.display = 'none';
         } else {
@@ -225,11 +396,6 @@
     
     /**
      * Advances the supply chain stage for a specific batch.
-     * @param {number} batchId - The ID of the batch to update.
-     * @param {string} actor - The actor performing the action.
-     * @param {string} action - Description of the action.
-     * @param {string} nextStatus - The new status of the batch.
-     * @param {object} data - Optional data for the block.
      */
     function advanceStage(batchId, actor, action, nextStatus, data = null) {
         const batch = batches.find(b => b.id === batchId);
@@ -243,13 +409,12 @@
         batch.blockchain.push(newBlock);
         batch.status = nextStatus;
         
-        openBatchModal(batchId); // Re-render the modal with updated state
-        renderBatches(); // Re-render the dashboard list
+        openBatchModal(batchId); 
+        renderBatches();
     }
 
     /**
      * Opens and populates the details modal for a specific batch.
-     * @param {number} batchId - The ID of the batch to display.
      */
     function openBatchModal(batchId) {
         const batch = batches.find(b => b.id === batchId);
@@ -257,7 +422,6 @@
 
         modalTitle.textContent = `Batch #${batch.id} - ${batch.details.crop}`;
         
-        // --- Build Modal HTML ---
         let modalHTML = `
             <div class="bg-gray-50 p-4 rounded-lg mb-6">
                 <h4 class="text-lg font-semibold mb-3 text-gray-800">Initial Batch Information</h4>
@@ -272,15 +436,12 @@
                     </div>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        `;
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
         
-        // Left side: Actions
         modalHTML += `<div><h4 class="text-lg font-semibold mb-3">Actions & Quality Assurance</h4>`;
         modalHTML += generateActionForms(batch);
         modalHTML += `</div>`;
         
-        // Right side: Ledger
         modalHTML += `<div><h4 class="text-lg font-semibold mb-3">Blockchain Ledger</h4><div class="space-y-3">`;
         batch.blockchain.forEach(block => {
             modalHTML += generateLedgerEntry(block);
@@ -290,75 +451,47 @@
         modalContent.innerHTML = modalHTML;
         modal.classList.add('show');
 
-        // Add event listeners to the new forms in the modal
         addModalFormListeners(batchId);
     }
 
     /**
      * Opens and populates the QR code modal for a specific batch.
-     * @param {number} batchId - The ID of the batch to display the QR for.
      */
     function openQrCodeModal(batchId) {
         const batch = batches.find(b => b.id === batchId);
         if (!batch) return;
 
         const qrcodeContainer = document.getElementById('qrcode');
-        qrcodeContainer.innerHTML = ''; // Clear previous QR code
+        qrcodeContainer.innerHTML = ''; 
 
-        new QRCode(qrcodeContainer, {
-            text: `BATCH_ID:${batch.id}`,
-            width: 200,
-            height: 200,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
+        new QRCode(qrcodeContainer, { text: `${batch.id}`, width: 200, height: 200 });
 
         document.getElementById('qr-batch-id').textContent = `ID: ${batch.id}`;
         qrModal.classList.add('show');
     }
     
     /**
-     * Generates the correct action forms based on the batch's current status.
-     * @param {object} batch - The batch object.
-     * @returns {string} HTML string for the forms.
+     * Generates action forms, enabling only those relevant to the current user's role.
      */
     function generateActionForms(batch) {
         let formsHTML = '';
-        const isDisabled = (status) => batch.status !== status;
-        
-        // Distributor QA Form
+        const canPerform = (role, status) => currentUser.role === role && batch.status === status;
+
         formsHTML += `
-            <form id="distributor-qa-form" class="qa-form ${isDisabled('AT_FARM') ? 'opacity-50 pointer-events-none' : ''}">
+            <form id="distributor-qa-form" class="qa-form ${!canPerform('DISTRIBUTOR', 'AT_FARM') ? 'opacity-50 pointer-events-none' : ''}">
                 <p class="font-semibold text-blue-800">1. Distributor Pickup</p>
-                <div class="my-2">
-                    <label class="block text-sm font-medium">Condition on Pickup:</label>
-                    <select id="distributor-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
-                        <option>Good</option>
-                        <option>Slightly Bruised</option>
-                        <option>Damaged</option>
-                    </select>
-                </div>
+                <div class="my-2"><label class="block text-sm font-medium">Condition:</label><select id="distributor-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"><option>Good</option><option>Slightly Bruised</option></select></div>
                 <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-blue-600 hover:bg-blue-700">Log Pickup</button>
             </form>`;
 
-        // Warehouse QA Form
         formsHTML += `
-            <form id="warehouse-qa-form" class="qa-form ${isDisabled('IN_TRANSIT') ? 'opacity-50 pointer-events-none' : ''}">
+            <form id="warehouse-qa-form" class="qa-form ${!canPerform('WAREHOUSE', 'IN_TRANSIT') ? 'opacity-50 pointer-events-none' : ''}">
                 <p class="font-semibold text-indigo-800">2. Warehouse Arrival</p>
-                <div class="my-2">
-                    <label class="block text-sm font-medium">Condition on Arrival:</label>
-                    <select id="warehouse-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
-                        <option>Good</option>
-                        <option>Slightly Bruised</option>
-                        <option>Damaged</option>
-                    </select>
-                </div>
+                <div class="my-2"><label class="block text-sm font-medium">Condition:</label><select id="warehouse-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"><option>Good</option><option>Slightly Bruised</option></select></div>
                 <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-indigo-600 hover:bg-indigo-700">Log Arrival</button>
             </form>`;
 
-        // Final Grader QA Form
-        formsHTML += `<div class="qa-form ${isDisabled('AT_WAREHOUSE') ? 'opacity-50 pointer-events-none' : ''}">
+        formsHTML += `<div class="qa-form ${!canPerform('QUALITY_INSPECTOR', 'AT_WAREHOUSE') ? 'opacity-50 pointer-events-none' : ''}">
             <p class="font-semibold text-teal-800">3. Final Quality Grading</p>
             <div class="grid grid-cols-2 gap-2 my-2">
                 <button data-grade="A" class="action-quality-btn w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-3 rounded-lg">Premium (A)</button>
@@ -367,17 +500,10 @@
             <button data-grade="REJECT" class="action-quality-btn w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg mt-2">Reject Batch</button>
         </div>`;
 
-        // Retailer QA Form
         formsHTML += `
-            <form id="retailer-qa-form" class="qa-form ${isDisabled('QUALITY_CHECKED') ? 'opacity-50 pointer-events-none' : ''}">
+            <form id="retailer-qa-form" class="qa-form ${!canPerform('RETAILER', 'QUALITY_CHECKED') ? 'opacity-50 pointer-events-none' : ''}">
                 <p class="font-semibold text-yellow-800">4. Retailer Delivery</p>
-                <div class="my-2">
-                    <label class="block text-sm font-medium">Condition on Delivery:</label>
-                    <select id="retailer-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
-                        <option>Good</option>
-                        <option>Minor Damage</option>
-                    </select>
-                </div>
+                <div class="my-2"><label class="block text-sm font-medium">Condition:</label><select id="retailer-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"><option>Good</option><option>Minor Damage</option></select></div>
                 <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-yellow-600 hover:bg-yellow-700">Log Delivery</button>
             </form>`;
 
@@ -390,25 +516,21 @@
 
     /**
      * Adds event listeners for the dynamically created forms inside the modal.
-     * @param {number} batchId - The ID of the batch being interacted with.
      */
     function addModalFormListeners(batchId) {
         document.getElementById('distributor-qa-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
-            const condition = document.getElementById('distributor-condition').value;
-            advanceStage(batchId, 'DISTRIBUTOR', 'Produce Pickup', 'IN_TRANSIT', { condition });
+            advanceStage(batchId, 'DISTRIBUTOR', 'Produce Pickup', 'IN_TRANSIT', { condition: document.getElementById('distributor-condition').value });
         });
         
         document.getElementById('warehouse-qa-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
-            const condition = document.getElementById('warehouse-condition').value;
-            advanceStage(batchId, 'WAREHOUSE', 'Received at Warehouse', 'AT_WAREHOUSE', { condition });
+            advanceStage(batchId, 'WAREHOUSE', 'Received at Warehouse', 'AT_WAREHOUSE', { condition: document.getElementById('warehouse-condition').value });
         });
 
         document.getElementById('retailer-qa-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
-            const condition = document.getElementById('retailer-condition').value;
-            advanceStage(batchId, 'RETAILER', 'Delivered to Store', 'AT_RETAILER', { condition });
+            advanceStage(batchId, 'RETAILER', 'Delivered to Store', 'AT_RETAILER', { condition: document.getElementById('retailer-condition').value });
         });
 
         document.querySelectorAll('.action-quality-btn')?.forEach(btn => {
@@ -426,8 +548,6 @@
 
     /**
      * Generates a single HTML ledger entry.
-     * @param {object} block - A block from the blockchain.
-     * @returns {string} HTML string for the ledger entry.
      */
     function generateLedgerEntry(block) {
         const icons = { 'FARMER': '🌱', 'DISTRIBUTOR': '🚚', 'WAREHOUSE': '🏢', 'QUALITY_INSPECTOR': '✅', 'RETAILER': '🛒' };
@@ -475,11 +595,8 @@
 
 
     // --- Event Listeners ---
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        loginContainer.style.display = 'none';
-        mainAppContainer.style.display = 'block';
-    });
+    loginForm.addEventListener('submit', handleLogin);
+    logoutBtn.addEventListener('click', handleLogout);
     
     cropImageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -528,6 +645,19 @@
         imagePreview.classList.add('hidden');
     });
 
+    scanForm.addEventListener('submit', e => {
+        e.preventDefault();
+        const batchId = parseInt(scanInput.value);
+        const batch = batches.find(b => b.id === batchId);
+        if (batch) {
+            openBatchModal(batchId);
+            scanError.classList.add('hidden');
+            scanInput.value = '';
+        } else {
+            scanError.classList.remove('hidden');
+        }
+    });
+
     batchListContainer.addEventListener('click', (e) => {
         const target = e.target.closest('button');
         if (target) {
@@ -540,12 +670,52 @@
             }
         }
     });
+    
+    // --- QR Scanner Logic ---
+    const startScanner = () => {
+        qrScannerModal.classList.add('show');
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        const onScanSuccess = (decodedText, decodedResult) => {
+            scanInput.value = decodedText;
+            stopScanner();
+        };
+        const onScanFailure = (error) => { /* ignore */ };
+        
+        try {
+            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure);
+        } catch (err) {
+            console.error("QR Scanner start failed", err);
+        }
+    };
+
+    const stopScanner = () => {
+        try {
+            if (html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    qrScannerModal.classList.remove('show');
+                });
+            } else {
+                 qrScannerModal.classList.remove('show');
+            }
+        } catch (err) {
+            console.error("QR Scanner stop failed", err);
+            qrScannerModal.classList.remove('show');
+        }
+    };
+
+    scanQrBtn.addEventListener('click', startScanner);
+    closeScannerModalBtn.addEventListener('click', stopScanner);
 
     closeModalBtn.addEventListener('click', () => modal.classList.remove('show'));
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
 
     closeQrModalBtn.addEventListener('click', () => qrModal.classList.remove('show'));
     qrModal.addEventListener('click', (e) => { if (e.target === qrModal) qrModal.classList.remove('show'); });
+    
+    howToUseBtn.addEventListener('click', () => instructionsModal.classList.add('show'));
+    closeInstructionsModalBtn.addEventListener('click', () => instructionsModal.classList.remove('show'));
+    instructionsModal.addEventListener('click', (e) => { if (e.target === instructionsModal) instructionsModal.classList.remove('show'); });
+
 
     printQrBtn.addEventListener('click', () => {
         const qrContent = document.getElementById('qrcode').innerHTML;
@@ -571,7 +741,7 @@
     });
 
     // --- Initial Render ---
-    renderBatches();
+    // No initial render needed, login is the first step.
 
     </script>
 </body>
