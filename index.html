@@ -71,11 +71,11 @@
                 </div>
             </form>
             <div class="text-center mt-6">
-                <button type="button" id="how-to-use-btn" class="text-green-600 hover:text-green-800 text-sm font-medium underline">How to use this application?</button>
+                <button type="button" id="how-to-use-btn" class="text-green-600 hover:text-green-800 text-sm font-medium underline">How to use this simulation?</button>
             </div>
              <div class="mt-4 text-xs text-gray-500 text-center">
                 <p class="font-bold">Test Accounts (pw: "password"):</p>
-                <p>FARMER_OD123, DIST_01, WAREHOUSE_01, INSPECTOR_01, RETAILER_01</p>
+                <p>FARMER_OD123, VERIFIER_01, DIST_01, AGENCY_01, RETAILER_01, CONSUMER_01</p>
             </div>
         </div>
     </div>
@@ -103,7 +103,6 @@
                     <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
                         <h2 class="text-2xl font-semibold mb-4">Add New Product Batch</h2>
                         <form id="farm-form">
-                            <!-- Form fields from previous version -->
                             <div class="space-y-4">
                                 <div>
                                     <label for="crop-type" class="block text-sm font-medium text-gray-700">Crop Type</label>
@@ -112,6 +111,10 @@
                                 <div>
                                     <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity (kg)</label>
                                     <input type="number" id="quantity" placeholder="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                                </div>
+                                <div>
+                                    <label for="expected-price" class="block text-sm font-medium text-gray-700">Expected Price (per kg)</label>
+                                    <input type="number" step="0.01" id="expected-price" placeholder="1.20" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
                                 </div>
                                 <div>
                                     <label for="initial-quality" class="block text-sm font-medium text-gray-700">Initial Quality</label>
@@ -147,14 +150,14 @@
         </div>
     </div>
 
-    <!-- Logistics Dashboard -->
+    <!-- Logistics/Other Roles Dashboard -->
     <div id="logistics-dashboard" class="dashboard p-4 sm:p-6 lg:p-8">
         <div class="max-w-4xl mx-auto">
-            <header class="text-center mb-8">
-                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Logistics Dashboard</h1>
-                <p class="text-gray-600 mt-2">Scan a batch QR code to view details and perform actions.</p>
+             <header id="logistics-header" class="text-center mb-8">
+                <h1 id="logistics-title" class="text-3xl sm:text-4xl font-bold text-gray-800">Logistics Dashboard</h1>
+                <p id="logistics-subtitle" class="text-gray-600 mt-2">Scan a batch QR code to view details and perform actions.</p>
             </header>
-            <div class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
+            <div id="scan-container" class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
                 <form id="scan-form">
                     <label for="scan-input" class="block text-lg font-medium text-gray-700">Enter or Scan Batch ID</label>
                     <div class="mt-2 flex items-center space-x-2">
@@ -171,6 +174,9 @@
                     </button>
                 </form>
                 <p id="scan-error" class="text-red-500 text-sm mt-2 hidden">Batch not found.</p>
+            </div>
+            <div id="available-batches-container" class="hidden">
+                 <!-- Batch cards will be injected here -->
             </div>
         </div>
     </div>
@@ -217,41 +223,55 @@
             </div>
             <div class="p-6 overflow-y-auto text-gray-700 space-y-4">
                 <div>
-                    <h4 class="font-bold text-lg">Step 1: Create a Product (as a Farmer)</h4>
+                    <h4 class="font-bold text-lg">Step 1: Farmer Creates a Batch</h4>
                     <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
-                        <li>Login using the ID <code class="bg-gray-200 px-1 rounded">FARMER_OD123</code> and password <code class="bg-gray-200 px-1 rounded">password</code>.</li>
-                        <li>Fill out the "Add New Product Batch" form with crop details and an image.</li>
-                        <li>Click "Create Batch". A new card will appear on the right.</li>
-                        <li>Click "Show QR" on the new batch. Note down the Batch ID (e.g., 167...). This is your product's unique identifier.</li>
+                        <li>Login as <code class="bg-gray-200 px-1 rounded">FARMER_OD123</code> (pw: password).</li>
+                        <li>Fill out the form with crop details, including an image and expected price. Click "Create Batch".</li>
+                        <li>The new batch appears on the right with status "Pending Verification". Note the Batch ID from the QR code.</li>
                         <li>Log out.</li>
                     </ol>
                 </div>
                 <div>
-                    <h4 class="font-bold text-lg">Step 2: Process the Product (as Logistics)</h4>
+                    <h4 class="font-bold text-lg">Step 2: Authenticity Verification</h4>
                     <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
-                        <li>Login as the first logistics user: <code class="bg-gray-200 px-1 rounded">DIST_01</code>.</li>
-                        <li>On the dashboard, either type the Batch ID from Step 1 into the input field or click the QR icon to scan it with your camera.</li>
-                        <li>Click "Find Batch". A details window will appear.</li>
-                        <li>Only the "Distributor Pickup" form will be active. Fill it out and click "Log Pickup". The blockchain ledger will update.</li>
-                        <li>Close the details window and log out.</li>
+                        <li>Login as <code class="bg-gray-200 px-1 rounded">VERIFIER_01</code>.</li>
+                        <li>Scan or enter the Batch ID.</li>
+                        <li>In the modal, click "Approve Entry" to validate the farmer's record. The status changes to "Verified".</li>
+                        <li>Log out.</li>
                     </ol>
                 </div>
                  <div>
-                    <h4 class="font-bold text-lg">Step 3: Continue the Chain</h4>
+                    <h4 class="font-bold text-lg">Step 3: Distributor Purchase</h4>
                     <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
-                        <li>Repeat Step 2 for each user in the supply chain in this order:</li>
-                        <li class="ml-4">-> Login as <code class="bg-gray-200 px-1 rounded">WAREHOUSE_01</code> (Logs warehouse arrival)</li>
-                        <li class="ml-4">-> Login as <code class="bg-gray-200 px-1 rounded">INSPECTOR_01</code> (Performs final quality grade)</li>
-                        <li class="ml-4">-> Login as <code class="bg-gray-200 px-1 rounded">RETAILER_01</code> (Logs delivery to store)</li>
-                        <li>Each user can only perform their specific action.</li>
+                        <li>Login as <code class="bg-gray-200 px-1 rounded">DIST_01</code>. You'll see a list of verified batches.</li>
+                        <li>Click "View & Purchase" on the batch.</li>
+                        <li>Confirm the purchase. A transaction is logged on the blockchain.</li>
+                        <li>Log out.</li>
                     </ol>
                 </div>
                  <div>
-                    <h4 class="font-bold text-lg">Step 4: Verify History</h4>
+                    <h4 class="font-bold text-lg">Step 4: Quality & Price Verification</h4>
                     <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
-                        <li>Log back in as the Farmer (<code class="bg-gray-200 px-1 rounded">FARMER_OD123</code>).</li>
-                        <li>Notice that the status on the batch card has updated.</li>
-                        <li>Click "Details" on the batch to see the complete, unchangeable history of every action on the blockchain ledger.</li>
+                        <li>Login as <code class="bg-gray-200 px-1 rounded">AGENCY_01</code>.</li>
+                        <li>Scan or enter the Batch ID.</li>
+                        <li>Verify the quality and price, then submit. This action is recorded immutably.</li>
+                        <li>Log out.</li>
+                    </ol>
+                </div>
+                 <div>
+                    <h4 class="font-bold text-lg">Step 5: Retailer Purchase</h4>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
+                         <li>Login as <code class="bg-gray-200 px-1 rounded">RETAILER_01</code>. You'll see batches verified by the agency.</li>
+                        <li>Click "View & Purchase" to buy the batch from the distributor.</li>
+                        <li>Log out.</li>
+                    </ol>
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg">Step 6: Consumer Verification</h4>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
+                         <li>Login as <code class="bg-gray-200 px-1 rounded">CONSUMER_01</code>.</li>
+                        <li>Scan the batch QR code (or enter the ID).</li>
+                        <li>You will see the complete, transparent, and unchangeable history of the product from farm to shelf.</li>
                     </ol>
                 </div>
             </div>
@@ -263,10 +283,11 @@
     // --- MOCK USER DATABASE ---
     const users = {
         "FARMER_OD123": { password: "password", role: "FARMER" },
+        "VERIFIER_01": { password: "password", role: "VERIFIER" },
         "DIST_01": { password: "password", role: "DISTRIBUTOR" },
-        "WAREHOUSE_01": { password: "password", role: "WAREHOUSE" },
-        "INSPECTOR_01": { password: "password", role: "QUALITY_INSPECTOR" },
-        "RETAILER_01": { password: "password", role: "RETAILER" }
+        "AGENCY_01": { password: "password", role: "AGENCY_INSPECTOR" },
+        "RETAILER_01": { password: "password", role: "RETAILER" },
+        "CONSUMER_01": { password: "password", role: "CONSUMER" }
     };
 
     // --- DOM Elements ---
@@ -287,6 +308,11 @@
     const batchListContainer = document.getElementById('batch-list-container');
     const batchPlaceholder = document.getElementById('batch-placeholder');
 
+    const logisticsHeader = document.getElementById('logistics-header');
+    const logisticsTitle = document.getElementById('logistics-title');
+    const logisticsSubtitle = document.getElementById('logistics-subtitle');
+    const scanContainer = document.getElementById('scan-container');
+    const availableBatchesContainer = document.getElementById('available-batches-container');
     const scanForm = document.getElementById('scan-form');
     const scanInput = document.getElementById('scan-input');
     const scanError = document.getElementById('scan-error');
@@ -315,9 +341,6 @@
 
     // --- Functions ---
     
-    /**
-     * Handles user login
-     */
     function handleLogin(e) {
         e.preventDefault();
         const username = document.getElementById('username').value;
@@ -329,6 +352,10 @@
             loginContainer.style.display = 'none';
             appHeader.style.display = 'flex';
             userInfo.textContent = `Logged in as: ${currentUser.id} (${currentUser.role})`;
+            loginError.classList.add('hidden');
+            
+            farmerDashboard.style.display = 'none';
+            logisticsDashboard.style.display = 'none';
 
             if (currentUser.role === 'FARMER') {
                 farmerDashboard.style.display = 'block';
@@ -338,16 +365,43 @@
                 if (!html5QrCode) {
                     html5QrCode = new Html5Qrcode("reader");
                 }
+                setupLogisticsDashboard();
             }
-            loginError.classList.add('hidden');
         } else {
             loginError.classList.remove('hidden');
         }
     }
 
-    /**
-     * Handles user logout
-     */
+    function setupLogisticsDashboard() {
+        scanContainer.style.display = 'block';
+        availableBatchesContainer.classList.add('hidden');
+        availableBatchesContainer.innerHTML = '';
+
+        const rolesWithLists = ['DISTRIBUTOR', 'RETAILER'];
+        if (rolesWithLists.includes(currentUser.role)) {
+            scanContainer.style.display = 'none';
+            availableBatchesContainer.classList.remove('hidden');
+            renderAvailableBatches();
+        } 
+        
+        const titles = {
+            VERIFIER: "Verification Dashboard",
+            DISTRIBUTOR: "Available Produce for Purchase",
+            AGENCY_INSPECTOR: "Quality & Price Verification",
+            RETAILER: "Available Batches for Purchase",
+            CONSUMER: "Product Traceability Portal",
+        };
+        const subtitles = {
+            VERIFIER: "Scan a batch ID to verify farmer's entry.",
+            DISTRIBUTOR: "Select a batch to purchase from a farmer.",
+            AGENCY_INSPECTOR: "Scan a batch ID to verify its quality and price.",
+            RETAILER: "Select a batch to purchase from a distributor.",
+            CONSUMER: "Scan a product QR code to see its full history.",
+        };
+        logisticsTitle.textContent = titles[currentUser.role] || "Logistics Dashboard";
+        logisticsSubtitle.textContent = subtitles[currentUser.role] || "Scan or enter a Batch ID.";
+    }
+
     function handleLogout() {
         currentUser = null;
         appHeader.style.display = 'none';
@@ -357,17 +411,10 @@
         document.getElementById('login-form').reset();
     }
 
-
-    /**
-     * Renders all batches to the farmer's dashboard.
-     */
     function renderBatches() {
         if (!currentUser || currentUser.role !== 'FARMER') return;
-        if (batches.length > 0) {
-            batchPlaceholder.style.display = 'none';
-        } else {
-            batchPlaceholder.style.display = 'block';
-        }
+        
+        batchPlaceholder.style.display = batches.length === 0 ? 'block' : 'none';
         batchListContainer.innerHTML = '';
 
         batches.forEach(batch => {
@@ -393,10 +440,38 @@
             batchListContainer.appendChild(card);
         });
     }
+
+    function renderAvailableBatches() {
+        const targetStatus = currentUser.role === 'DISTRIBUTOR' ? 'VERIFIED' : 'QUALITY_PRICE_VERIFIED';
+        const available = batches.filter(b => b.status === targetStatus);
+
+        if (available.length === 0) {
+            availableBatchesContainer.innerHTML = `<p class="text-center text-gray-500 bg-white p-8 rounded-lg shadow-lg">No batches currently available for ${currentUser.role.toLowerCase()}.</p>`;
+            return;
+        }
+
+        let cardsHTML = '<div class="space-y-4">';
+        available.forEach(batch => {
+            const statusInfo = getStatusInfo(batch.status);
+             cardsHTML += `
+                <div class="batch-card bg-white p-4 border border-gray-200 rounded-lg flex justify-between items-center">
+                    <div class="flex items-center">
+                         <img src="${batch.details.imageUrl}" alt="Crop Image" class="w-12 h-12 rounded-md object-cover mr-4">
+                        <div>
+                            <p class="font-bold text-lg">${batch.details.crop}</p>
+                            <p class="text-sm text-gray-500">${batch.details.quantity} | Farmer Price: $${batch.details.expectedPrice}/kg</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                         <button data-id="${batch.id}" class="view-details-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">View & Purchase</button>
+                    </div>
+                </div>
+            `;
+        });
+        cardsHTML += '</div>';
+        availableBatchesContainer.innerHTML = cardsHTML;
+    }
     
-    /**
-     * Advances the supply chain stage for a specific batch.
-     */
     function advanceStage(batchId, actor, action, nextStatus, data = null) {
         const batch = batches.find(b => b.id === batchId);
         if (!batch) return;
@@ -413,14 +488,12 @@
         renderBatches();
     }
 
-    /**
-     * Opens and populates the details modal for a specific batch.
-     */
     function openBatchModal(batchId) {
         const batch = batches.find(b => b.id === batchId);
         if (!batch) return;
 
         modalTitle.textContent = `Batch #${batch.id} - ${batch.details.crop}`;
+        const isConsumer = currentUser.role === 'CONSUMER';
         
         let modalHTML = `
             <div class="bg-gray-50 p-4 rounded-lg mb-6">
@@ -432,17 +505,20 @@
                     <div class="md:col-span-2 text-sm text-gray-700 space-y-2">
                         <p><strong>Quantity:</strong> ${batch.details.quantity}</p>
                         <p><strong>Harvest Date:</strong> ${batch.details.harvestDate}</p>
-                        <p><strong>Initial Quality Recorded:</strong> <span class="font-semibold text-green-700">${batch.details.initialQuality}</span></p>
+                        <p><strong>Initial Quality:</strong> <span class="font-semibold text-green-700">${batch.details.initialQuality}</span></p>
+                        <p><strong>Farmer's Expected Price:</strong> <span class="font-semibold text-green-700">$${batch.details.expectedPrice} / kg</span></p>
                     </div>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
+            <div class="grid grid-cols-1 ${isConsumer ? '' : 'md:grid-cols-2'} gap-6">`;
         
-        modalHTML += `<div><h4 class="text-lg font-semibold mb-3">Actions & Quality Assurance</h4>`;
-        modalHTML += generateActionForms(batch);
-        modalHTML += `</div>`;
+        if (!isConsumer) {
+            modalHTML += `<div><h4 class="text-lg font-semibold mb-3">Actions</h4>`;
+            modalHTML += generateActionForms(batch);
+            modalHTML += `</div>`;
+        }
         
-        modalHTML += `<div><h4 class="text-lg font-semibold mb-3">Blockchain Ledger</h4><div class="space-y-3">`;
+        modalHTML += `<div class="${isConsumer ? 'col-span-1' : ''}"><h4 class="text-lg font-semibold mb-3">Blockchain Ledger</h4><div class="space-y-3">`;
         batch.blockchain.forEach(block => {
             modalHTML += generateLedgerEntry(block);
         });
@@ -451,112 +527,104 @@
         modalContent.innerHTML = modalHTML;
         modal.classList.add('show');
 
-        addModalFormListeners(batchId);
+        if (!isConsumer) {
+             addModalFormListeners(batchId);
+        }
     }
 
-    /**
-     * Opens and populates the QR code modal for a specific batch.
-     */
     function openQrCodeModal(batchId) {
         const batch = batches.find(b => b.id === batchId);
         if (!batch) return;
-
         const qrcodeContainer = document.getElementById('qrcode');
         qrcodeContainer.innerHTML = ''; 
-
         new QRCode(qrcodeContainer, { text: `${batch.id}`, width: 200, height: 200 });
-
         document.getElementById('qr-batch-id').textContent = `ID: ${batch.id}`;
         qrModal.classList.add('show');
     }
     
-    /**
-     * Generates action forms, enabling only those relevant to the current user's role.
-     */
     function generateActionForms(batch) {
         let formsHTML = '';
         const canPerform = (role, status) => currentUser.role === role && batch.status === status;
 
-        formsHTML += `
-            <form id="distributor-qa-form" class="qa-form ${!canPerform('DISTRIBUTOR', 'AT_FARM') ? 'opacity-50 pointer-events-none' : ''}">
-                <p class="font-semibold text-blue-800">1. Distributor Pickup</p>
-                <div class="my-2"><label class="block text-sm font-medium">Condition:</label><select id="distributor-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"><option>Good</option><option>Slightly Bruised</option></select></div>
-                <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-blue-600 hover:bg-blue-700">Log Pickup</button>
+        if (canPerform('VERIFIER', 'PENDING_VERIFICATION')) {
+            formsHTML += `<div class="qa-form">
+                <p class="font-semibold text-purple-800">1. Authenticity Verification</p>
+                <p class="text-sm text-gray-600 my-2">Verify the farmer's credentials and land records.</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button data-action="approve" class="action-verify-btn w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg">Approve Entry</button>
+                    <button data-action="reject" class="action-verify-btn w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg">Reject Entry</button>
+                </div>
+            </div>`;
+        }
+
+        if (canPerform('DISTRIBUTOR', 'VERIFIED')) {
+            formsHTML += `<div class="qa-form">
+                <p class="font-semibold text-blue-800">2. Distributor Purchase</p>
+                <p class="text-sm text-gray-600 my-2">Purchase this batch from the farmer. The transaction will be recorded on the blockchain.</p>
+                <button id="purchase-distributor-btn" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-blue-600 hover:bg-blue-700">Confirm Purchase</button>
+            </div>`;
+        }
+        
+        if (canPerform('AGENCY_INSPECTOR', 'SOLD_TO_DISTRIBUTOR')) {
+            formsHTML += `<form id="agency-qa-form" class="qa-form">
+                <p class="font-semibold text-teal-800">3. Quality & Price Verification</p>
+                 <div class="my-2"><label class="block text-sm font-medium">Final Quality Grade:</label><select id="agency-quality" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"><option>A (Premium)</option><option>B (Standard)</option><option>C (Sub-par)</option></select></div>
+                 <div class="my-2"><label class="block text-sm font-medium">Fair Price ($/kg):</label><input type="number" step="0.01" id="agency-price" value="${batch.details.expectedPrice}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" required></div>
+                <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-teal-600 hover:bg-teal-700">Certify Quality & Price</button>
             </form>`;
+        }
+        
+        if (canPerform('RETAILER', 'QUALITY_PRICE_VERIFIED')) {
+             formsHTML += `<div class="qa-form">
+                <p class="font-semibold text-yellow-800">4. Retailer Purchase</p>
+                <p class="text-sm text-gray-600 my-2">Purchase this batch from the distributor to stock in your store.</p>
+                <button id="purchase-retailer-btn" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-yellow-600 hover:bg-yellow-700">Confirm Purchase</button>
+            </div>`;
+        }
 
-        formsHTML += `
-            <form id="warehouse-qa-form" class="qa-form ${!canPerform('WAREHOUSE', 'IN_TRANSIT') ? 'opacity-50 pointer-events-none' : ''}">
-                <p class="font-semibold text-indigo-800">2. Warehouse Arrival</p>
-                <div class="my-2"><label class="block text-sm font-medium">Condition:</label><select id="warehouse-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"><option>Good</option><option>Slightly Bruised</option></select></div>
-                <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-indigo-600 hover:bg-indigo-700">Log Arrival</button>
-            </form>`;
-
-        formsHTML += `<div class="qa-form ${!canPerform('QUALITY_INSPECTOR', 'AT_WAREHOUSE') ? 'opacity-50 pointer-events-none' : ''}">
-            <p class="font-semibold text-teal-800">3. Final Quality Grading</p>
-            <div class="grid grid-cols-2 gap-2 my-2">
-                <button data-grade="A" class="action-quality-btn w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-3 rounded-lg">Premium (A)</button>
-                <button data-grade="B" class="action-quality-btn w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-3 rounded-lg">Standard (B)</button>
-            </div>
-            <button data-grade="REJECT" class="action-quality-btn w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg mt-2">Reject Batch</button>
-        </div>`;
-
-        formsHTML += `
-            <form id="retailer-qa-form" class="qa-form ${!canPerform('RETAILER', 'QUALITY_CHECKED') ? 'opacity-50 pointer-events-none' : ''}">
-                <p class="font-semibold text-yellow-800">4. Retailer Delivery</p>
-                <div class="my-2"><label class="block text-sm font-medium">Condition:</label><select id="retailer-condition" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"><option>Good</option><option>Minor Damage</option></select></div>
-                <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-yellow-600 hover:bg-yellow-700">Log Delivery</button>
-            </form>`;
-
-        if (batch.status === 'REJECTED') {
-            formsHTML += `<div class="mt-4 p-3 bg-red-100 text-red-700 font-bold text-center rounded-lg">BATCH REJECTED</div>`;
+        if (formsHTML === '') {
+            formsHTML = `<p class="text-gray-500 p-4 bg-gray-100 rounded-lg">No actions available for you at this stage.</p>`;
         }
         
         return formsHTML;
     }
 
-    /**
-     * Adds event listeners for the dynamically created forms inside the modal.
-     */
     function addModalFormListeners(batchId) {
-        document.getElementById('distributor-qa-form')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            advanceStage(batchId, 'DISTRIBUTOR', 'Produce Pickup', 'IN_TRANSIT', { condition: document.getElementById('distributor-condition').value });
-        });
-        
-        document.getElementById('warehouse-qa-form')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            advanceStage(batchId, 'WAREHOUSE', 'Received at Warehouse', 'AT_WAREHOUSE', { condition: document.getElementById('warehouse-condition').value });
-        });
-
-        document.getElementById('retailer-qa-form')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            advanceStage(batchId, 'RETAILER', 'Delivered to Store', 'AT_RETAILER', { condition: document.getElementById('retailer-condition').value });
-        });
-
-        document.querySelectorAll('.action-quality-btn')?.forEach(btn => {
+        document.querySelectorAll('.action-verify-btn')?.forEach(btn => {
             btn.addEventListener('click', () => {
-                const grade = btn.dataset.grade;
-                const pricing = { 'A': 1.50, 'B': 1.00 };
-                if (grade === 'REJECT') {
-                    advanceStage(batchId, 'QUALITY_INSPECTOR', 'Batch Rejected', 'REJECTED', { reason: 'Failed quality standards' });
+                const action = btn.dataset.action;
+                if (action === 'approve') {
+                    advanceStage(batchId, 'VERIFIER', 'Farmer Entry Verified', 'VERIFIED', { authenticity: 'Confirmed' });
                 } else {
-                    advanceStage(batchId, 'QUALITY_INSPECTOR', 'Quality Approved', 'QUALITY_CHECKED', { finalGrade: grade, pricePerKg: pricing[grade] });
+                    advanceStage(batchId, 'VERIFIER', 'Farmer Entry Rejected', 'REJECTED_BY_VERIFIER', { reason: 'Invalid credentials' });
                 }
             });
         });
+
+        document.getElementById('purchase-distributor-btn')?.addEventListener('click', () => {
+             advanceStage(batchId, 'DISTRIBUTOR', 'Purchase from Farmer', 'SOLD_TO_DISTRIBUTOR', { transaction: 'Payment Confirmed' });
+        });
+
+        document.getElementById('agency-qa-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const finalGrade = document.getElementById('agency-quality').value;
+            const fairPrice = document.getElementById('agency-price').value;
+            advanceStage(batchId, 'AGENCY_INSPECTOR', 'Quality & Price Certified', 'QUALITY_PRICE_VERIFIED', { finalGrade, fairPrice: `$${fairPrice}/kg` });
+        });
+        
+         document.getElementById('purchase-retailer-btn')?.addEventListener('click', () => {
+             advanceStage(batchId, 'RETAILER', 'Purchase from Distributor', 'READY_FOR_SALE', { transaction: 'Payment Confirmed' });
+        });
     }
 
-    /**
-     * Generates a single HTML ledger entry.
-     */
     function generateLedgerEntry(block) {
-        const icons = { 'FARMER': '🌱', 'DISTRIBUTOR': '🚚', 'WAREHOUSE': '🏢', 'QUALITY_INSPECTOR': '✅', 'RETAILER': '🛒' };
-        const colors = { 'FARMER': 'green', 'DISTRIBUTOR': 'blue', 'WAREHOUSE': 'indigo', 'QUALITY_INSPECTOR': 'teal', 'RETAILER': 'yellow' };
+        const icons = { 'FARMER': '🌱', 'VERIFIER': '🔍', 'DISTRIBUTOR': '🚚', 'AGENCY_INSPECTOR': '✅', 'RETAILER': '🛒', 'CONSUMER': '🧑' };
+        const colors = { 'FARMER': 'green', 'VERIFIER': 'purple', 'DISTRIBUTOR': 'blue', 'AGENCY_INSPECTOR': 'teal', 'RETAILER': 'yellow' };
         
         let actor = block.actor;
-        if (actor === 'QUALITY_INSPECTOR' && block.action.includes('Rejected')) {
-            icons.QUALITY_INSPECTOR = '❌';
-            colors.QUALITY_INSPECTOR = 'red';
+        if (actor === 'VERIFIER' && block.action.includes('Rejected')) {
+            icons.VERIFIER = '❌';
+            colors.VERIFIER = 'red';
         }
         
         let dataHTML = '';
@@ -578,19 +646,16 @@
             </div>`;
     }
     
-    /**
-     * Gets display info (text, color) for a given status.
-     */
     function getStatusInfo(status) {
-        switch(status) {
-            case 'AT_FARM': return { text: 'At Farm', textColor: 'text-green-800', bgColor: 'bg-green-100' };
-            case 'IN_TRANSIT': return { text: 'In Transit', textColor: 'text-blue-800', bgColor: 'bg-blue-100' };
-            case 'AT_WAREHOUSE': return { text: 'At Warehouse', textColor: 'text-indigo-800', bgColor: 'bg-indigo-100' };
-            case 'QUALITY_CHECKED': return { text: 'Quality Checked', textColor: 'text-teal-800', bgColor: 'bg-teal-100' };
-            case 'AT_RETAILER': return { text: 'At Retailer', textColor: 'text-yellow-800', bgColor: 'bg-yellow-100' };
-            case 'REJECTED': return { text: 'Rejected', textColor: 'text-red-800', bgColor: 'bg-red-100' };
-            default: return { text: 'Unknown', textColor: 'text-gray-800', bgColor: 'bg-gray-100' };
-        }
+        const statuses = {
+            'PENDING_VERIFICATION': { text: 'Pending Verification', textColor: 'text-purple-800', bgColor: 'bg-purple-100' },
+            'VERIFIED': { text: 'Verified', textColor: 'text-green-800', bgColor: 'bg-green-100' },
+            'SOLD_TO_DISTRIBUTOR': { text: 'With Distributor', textColor: 'text-blue-800', bgColor: 'bg-blue-100' },
+            'QUALITY_PRICE_VERIFIED': { text: 'Agency Verified', textColor: 'text-teal-800', bgColor: 'bg-teal-100' },
+            'READY_FOR_SALE': { text: 'At Retailer', textColor: 'text-yellow-800', bgColor: 'bg-yellow-100' },
+            'REJECTED_BY_VERIFIER': { text: 'Rejected', textColor: 'text-red-800', bgColor: 'bg-red-100' }
+        };
+        return statuses[status] || { text: 'Unknown', textColor: 'text-gray-800', bgColor: 'bg-gray-100' };
     }
 
 
@@ -611,12 +676,13 @@
         
         const crop = document.getElementById('crop-type').value;
         const quantity = document.getElementById('quantity').value;
+        const expectedPrice = document.getElementById('expected-price').value;
         const initialQuality = document.getElementById('initial-quality').value;
         const harvestDate = document.getElementById('harvest-date').value;
         const imageFile = document.getElementById('crop-image').files[0];
 
-        if (!harvestDate || !imageFile) {
-            alert("Please fill out all fields, including harvest date and image.");
+        if (!harvestDate || !imageFile || !expectedPrice) {
+            alert("Please fill out all fields, including price, date, and image.");
             return;
         }
 
@@ -625,17 +691,18 @@
             details: { 
                 crop, 
                 quantity: `${quantity} kg`,
+                expectedPrice,
                 initialQuality,
                 harvestDate,
                 imageUrl: URL.createObjectURL(imageFile)
             },
-            status: 'AT_FARM',
+            status: 'PENDING_VERIFICATION',
             blockchain: [{
                 index: 1,
                 timestamp: new Date().toLocaleString(),
                 actor: 'FARMER',
                 action: 'Batch Created (Genesis Block)',
-                data: { origin: 'Odisha Farm Co-op', harvestDate, initialQuality }
+                data: { origin: 'Odisha Farm Co-op', harvestDate, initialQuality, expectedPrice: `$${expectedPrice}/kg` }
             }]
         };
 
@@ -662,12 +729,16 @@
         const target = e.target.closest('button');
         if (target) {
             const batchId = parseInt(target.dataset.id);
-            if (target.classList.contains('view-details-btn')) {
-                openBatchModal(batchId);
-            }
-            if (target.classList.contains('show-qr-btn')) {
-                openQrCodeModal(batchId);
-            }
+            if (target.classList.contains('view-details-btn')) openBatchModal(batchId);
+            if (target.classList.contains('show-qr-btn')) openQrCodeModal(batchId);
+        }
+    });
+    
+    availableBatchesContainer.addEventListener('click', (e) => {
+        const target = e.target.closest('button.view-details-btn');
+        if(target) {
+            const batchId = parseInt(target.dataset.id);
+            openBatchModal(batchId);
         }
     });
     
@@ -678,6 +749,7 @@
         const onScanSuccess = (decodedText, decodedResult) => {
             scanInput.value = decodedText;
             stopScanner();
+            scanForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
         };
         const onScanFailure = (error) => { /* ignore */ };
         
@@ -690,10 +762,8 @@
 
     const stopScanner = () => {
         try {
-            if (html5QrCode.isScanning) {
-                html5QrCode.stop().then(() => {
-                    qrScannerModal.classList.remove('show');
-                });
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => qrScannerModal.classList.remove('show'));
             } else {
                  qrScannerModal.classList.remove('show');
             }
@@ -706,8 +776,13 @@
     scanQrBtn.addEventListener('click', startScanner);
     closeScannerModalBtn.addEventListener('click', stopScanner);
 
-    closeModalBtn.addEventListener('click', () => modal.classList.remove('show'));
-    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
+    closeModalBtn.addEventListener('click', () => {
+        modal.classList.remove('show');
+        if (['DISTRIBUTOR', 'RETAILER'].includes(currentUser?.role)) {
+            renderAvailableBatches();
+        }
+    });
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModalBtn.click(); });
 
     closeQrModalBtn.addEventListener('click', () => qrModal.classList.remove('show'));
     qrModal.addEventListener('click', (e) => { if (e.target === qrModal) qrModal.classList.remove('show'); });
@@ -716,34 +791,13 @@
     closeInstructionsModalBtn.addEventListener('click', () => instructionsModal.classList.remove('show'));
     instructionsModal.addEventListener('click', (e) => { if (e.target === instructionsModal) instructionsModal.classList.remove('show'); });
 
-
     printQrBtn.addEventListener('click', () => {
         const qrContent = document.getElementById('qrcode').innerHTML;
         const batchIdText = document.getElementById('qr-batch-id').textContent;
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <html>
-                <head><title>Print QR Code</title></head>
-                <body style="text-align:center; font-family: sans-serif; padding-top: 2rem;">
-                    <h2>AgriTrace Batch</h2>
-                    ${qrContent}
-                    <p style="font-family: monospace;">${batchIdText}</p>
-                    <script>
-                        window.onload = function() {
-                            window.print();
-                            window.close();
-                        }
-                    <\/script>
-                </body>
-            </html>
-        `);
+        printWindow.document.write(`<html><head><title>Print QR Code</title></head><body style="text-align:center; font-family: sans-serif; padding-top: 2rem;"><h2>AgriTrace Batch</h2>${qrContent}<p style="font-family: monospace;">${batchIdText}</p><script>window.onload = function() { window.print(); window.close(); }<\/script></body></html>`);
         printWindow.document.close();
     });
-
-    // --- Initial Render ---
-    // No initial render needed, login is the first step.
-
     </script>
 </body>
 </html>
-
