@@ -113,8 +113,8 @@
                                     <input type="number" id="quantity" placeholder="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
                                 </div>
                                 <div>
-                                    <label for="expected-price" class="block text-sm font-medium text-gray-700">Expected Price (per kg)</label>
-                                    <input type="number" step="0.01" id="expected-price" placeholder="1.20" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                                    <label for="expected-price" class="block text-sm font-medium text-gray-700">Expected Price (₹/kg)</label>
+                                    <input type="number" step="1" id="expected-price" placeholder="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
                                 </div>
                                 <div>
                                     <label for="initial-quality" class="block text-sm font-medium text-gray-700">Initial Quality</label>
@@ -245,7 +245,7 @@
                     <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
                         <li>Login as <code class="bg-gray-200 px-1 rounded">DIST_01</code>. You'll see a list of verified batches.</li>
                         <li>Click "View & Purchase" on the batch.</li>
-                        <li>Confirm the purchase. A transaction is logged on the blockchain.</li>
+                        <li>Click "Confirm Purchase", then "Pay with UPI". A successful payment is simulated.</li>
                         <li>Log out.</li>
                     </ol>
                 </div>
@@ -262,7 +262,7 @@
                     <h4 class="font-bold text-lg">Step 5: Retailer Purchase</h4>
                     <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
                          <li>Login as <code class="bg-gray-200 px-1 rounded">RETAILER_01</code>. You'll see batches verified by the agency.</li>
-                        <li>Click "View & Purchase" to buy the batch from the distributor.</li>
+                        <li>Click "View & Purchase", then simulate the UPI payment to buy the batch.</li>
                         <li>Log out.</li>
                     </ol>
                 </div>
@@ -274,6 +274,29 @@
                         <li>You will see the complete, transparent, and unchangeable history of the product from farm to shelf.</li>
                     </ol>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPI Payment Modal -->
+    <div id="upi-payment-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm text-center p-6">
+            <div id="upi-initial-view">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Confirm Purchase</h3>
+                <p class="text-gray-600 mb-4">Proceed to pay securely via UPI.</p>
+                <img src="https://i.imgur.com/g27h2p3.png" alt="UPI Logos" class="w-48 mx-auto mb-6">
+                <button id="pay-upi-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700">Pay with UPI</button>
+                <button id="cancel-upi-btn" class="mt-2 w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400">Cancel</button>
+            </div>
+            <div id="upi-processing-view" class="hidden">
+                 <h3 class="text-xl font-bold text-gray-800 mb-4">Processing Payment...</h3>
+                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                 <p class="text-gray-600 mt-4">Please wait, do not close this window.</p>
+            </div>
+            <div id="upi-success-view" class="hidden">
+                <svg class="w-16 h-16 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <h3 class="text-2xl font-bold text-green-600 mt-4">Payment Successful!</h3>
+                <p class="text-gray-600 mt-2">Updating blockchain record...</p>
             </div>
         </div>
     </div>
@@ -332,12 +355,20 @@
     
     const instructionsModal = document.getElementById('instructions-modal');
     const closeInstructionsModalBtn = document.getElementById('close-instructions-modal');
+    
+    const upiPaymentModal = document.getElementById('upi-payment-modal');
+    const upiInitialView = document.getElementById('upi-initial-view');
+    const upiProcessingView = document.getElementById('upi-processing-view');
+    const upiSuccessView = document.getElementById('upi-success-view');
+    const payUpiBtn = document.getElementById('pay-upi-btn');
+    const cancelUpiBtn = document.getElementById('cancel-upi-btn');
 
 
     // --- State Management ---
     let batches = []; // Array to hold all product batches
     let currentUser = null;
     let html5QrCode;
+    let currentPaymentCallback = null;
 
     // --- Functions ---
     
@@ -459,7 +490,7 @@
                          <img src="${batch.details.imageUrl}" alt="Crop Image" class="w-12 h-12 rounded-md object-cover mr-4">
                         <div>
                             <p class="font-bold text-lg">${batch.details.crop}</p>
-                            <p class="text-sm text-gray-500">${batch.details.quantity} | Farmer Price: $${batch.details.expectedPrice}/kg</p>
+                            <p class="text-sm text-gray-500">${batch.details.quantity} | Farmer Price: ₹${batch.details.expectedPrice}/kg</p>
                         </div>
                     </div>
                     <div class="text-right">
@@ -506,7 +537,7 @@
                         <p><strong>Quantity:</strong> ${batch.details.quantity}</p>
                         <p><strong>Harvest Date:</strong> ${batch.details.harvestDate}</p>
                         <p><strong>Initial Quality:</strong> <span class="font-semibold text-green-700">${batch.details.initialQuality}</span></p>
-                        <p><strong>Farmer's Expected Price:</strong> <span class="font-semibold text-green-700">$${batch.details.expectedPrice} / kg</span></p>
+                        <p><strong>Farmer's Expected Price:</strong> <span class="font-semibold text-green-700">₹${batch.details.expectedPrice} / kg</span></p>
                     </div>
                 </div>
             </div>
@@ -569,7 +600,7 @@
             formsHTML += `<form id="agency-qa-form" class="qa-form">
                 <p class="font-semibold text-teal-800">3. Quality & Price Verification</p>
                  <div class="my-2"><label class="block text-sm font-medium">Final Quality Grade:</label><select id="agency-quality" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"><option>A (Premium)</option><option>B (Standard)</option><option>C (Sub-par)</option></select></div>
-                 <div class="my-2"><label class="block text-sm font-medium">Fair Price ($/kg):</label><input type="number" step="0.01" id="agency-price" value="${batch.details.expectedPrice}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" required></div>
+                 <div class="my-2"><label class="block text-sm font-medium">Fair Price (₹/kg):</label><input type="number" step="0.01" id="agency-price" value="${batch.details.expectedPrice}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" required></div>
                 <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-teal-600 hover:bg-teal-700">Certify Quality & Price</button>
             </form>`;
         }
@@ -602,18 +633,20 @@
         });
 
         document.getElementById('purchase-distributor-btn')?.addEventListener('click', () => {
-             advanceStage(batchId, 'DISTRIBUTOR', 'Purchase from Farmer', 'SOLD_TO_DISTRIBUTOR', { transaction: 'Payment Confirmed' });
+             const confirmPurchase = () => advanceStage(batchId, 'DISTRIBUTOR', 'Purchase from Farmer', 'SOLD_TO_DISTRIBUTOR', { transaction: 'Payment Confirmed' });
+             showUpiPaymentModal(confirmPurchase);
         });
 
         document.getElementById('agency-qa-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
             const finalGrade = document.getElementById('agency-quality').value;
             const fairPrice = document.getElementById('agency-price').value;
-            advanceStage(batchId, 'AGENCY_INSPECTOR', 'Quality & Price Certified', 'QUALITY_PRICE_VERIFIED', { finalGrade, fairPrice: `$${fairPrice}/kg` });
+            advanceStage(batchId, 'AGENCY_INSPECTOR', 'Quality & Price Certified', 'QUALITY_PRICE_VERIFIED', { finalGrade, fairPrice: `₹${fairPrice}/kg` });
         });
         
          document.getElementById('purchase-retailer-btn')?.addEventListener('click', () => {
-             advanceStage(batchId, 'RETAILER', 'Purchase from Distributor', 'READY_FOR_SALE', { transaction: 'Payment Confirmed' });
+             const confirmPurchase = () => advanceStage(batchId, 'RETAILER', 'Purchase from Distributor', 'READY_FOR_SALE', { transaction: 'Payment Confirmed' });
+             showUpiPaymentModal(confirmPurchase);
         });
     }
 
@@ -702,7 +735,7 @@
                 timestamp: new Date().toLocaleString(),
                 actor: 'FARMER',
                 action: 'Batch Created (Genesis Block)',
-                data: { origin: 'Odisha Farm Co-op', harvestDate, initialQuality, expectedPrice: `$${expectedPrice}/kg` }
+                data: { origin: 'Odisha Farm Co-op', harvestDate, initialQuality, expectedPrice: `₹${expectedPrice}/kg` }
             }]
         };
 
@@ -798,6 +831,41 @@
         printWindow.document.write(`<html><head><title>Print QR Code</title></head><body style="text-align:center; font-family: sans-serif; padding-top: 2rem;"><h2>AgriTrace Batch</h2>${qrContent}<p style="font-family: monospace;">${batchIdText}</p><script>window.onload = function() { window.print(); window.close(); }<\/script></body></html>`);
         printWindow.document.close();
     });
+
+    // --- UPI Payment Logic ---
+    function showUpiPaymentModal(onConfirm) {
+        currentPaymentCallback = onConfirm;
+        upiInitialView.style.display = 'block';
+        upiProcessingView.classList.add('hidden');
+        upiSuccessView.classList.add('hidden');
+        upiPaymentModal.classList.add('show');
+    }
+
+    function hideUpiPaymentModal() {
+        upiPaymentModal.classList.remove('show');
+        currentPaymentCallback = null;
+    }
+
+    payUpiBtn.addEventListener('click', () => {
+        upiInitialView.style.display = 'none';
+        upiProcessingView.classList.remove('hidden');
+
+        setTimeout(() => {
+            upiProcessingView.classList.add('hidden');
+            upiSuccessView.classList.remove('hidden');
+
+            setTimeout(() => {
+                if (currentPaymentCallback) {
+                    currentPaymentCallback();
+                }
+                hideUpiPaymentModal();
+            }, 1500); // Show success message
+        }, 2500); // Simulate processing time
+    });
+
+    cancelUpiBtn.addEventListener('click', hideUpiPaymentModal);
+
     </script>
 </body>
 </html>
+
