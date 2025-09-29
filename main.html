@@ -5,15 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AgriTrace: Blockchain Supply Chain Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
+        :root {
+            --brand-green: #16a34a; /* green-600 */
+            --brand-green-dark: #15803d; /* green-700 */
+            --brand-green-light: #f0fdf4; /* green-50 */
+            --brand-text: #1f2937; /* gray-800 */
+            --muted-text: #4b5563; /* gray-600 */
+        }
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+            color: var(--brand-text);
+        }
+        h1, h2, h3, h4, h5, h6 {
+             font-family: 'Poppins', sans-serif;
         }
         .btn-primary {
-            transition: background-color 0.3s ease;
+            background: linear-gradient(to right, var(--brand-green), var(--brand-green-dark));
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            color: white;
+            border-radius: 0.5rem;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
         }
         .ledger-entry {
             border-left-width: 4px;
@@ -31,119 +53,210 @@
             display: flex;
         }
         @keyframes fadeInModal {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
         .dashboard { display: none; }
-        .batch-card { transition: all 0.2s ease-in-out; }
-        .batch-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); }
-        .qa-form {
-            border: 1px solid #e5e7eb;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
+        .batch-card { 
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-in-out forwards;
+            opacity: 0;
+            border-radius: 0.75rem;
         }
+        .batch-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .form-card, .list-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            border: 1px solid #e5e7eb;
+        }
+        .list-card {
+            padding: 0;
+            overflow: hidden;
+        }
+        .list-card-header {
+            padding: 1.25rem 1.5rem;
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        input, select {
+            border-radius: 0.5rem !important;
+        }
+        input:focus, select:focus {
+            box-shadow: 0 0 0 2px var(--brand-green-light), 0 0 0 4px var(--brand-green) !important;
+            border-color: var(--brand-green) !important;
+        }
+        /* Stepper for Modal Actions */
+        .step {
+            position: relative;
+            padding-left: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-left: 2px solid #e5e7eb;
+        }
+        .step:last-child {
+            border-left: 2px solid transparent;
+            padding-bottom: 0;
+        }
+        .step-icon {
+            position: absolute;
+            left: -0.875rem;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 9999px;
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            border: 4px solid #f9fafb;
+        }
+        .step-complete .step-icon { background-color: var(--brand-green); color: white; }
+        .step-active .step-icon { background-color: #3b82f6; color: white; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-50 text-gray-800">
 
     <!-- Login Container -->
-    <div id="login-container" class="min-h-screen flex items-center justify-center bg-green-50 p-4">
-        <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-green-700">AgriTrace Portal</h1>
-                <p class="text-gray-500 mt-2">Login to your account</p>
-            </div>
-            <form id="login-form">
-                <div class="space-y-6">
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700">User ID</label>
-                        <input type="text" id="username" placeholder="e.g., FARMER_OD123" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
-                    </div>
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input type="password" id="password" value="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
-                    </div>
-                     <p id="login-error" class="text-red-500 text-sm hidden">Invalid credentials. Please try again.</p>
-                    <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 btn-primary">
-                        Login
-                    </button>
+    <div id="login-container" class="min-h-screen flex bg-white">
+        <!-- Left Panel with Image -->
+        <div class="hidden lg:block w-1/2 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1625246333195-78d9c38AD449?q=80&w=2070&auto=format&fit=crop');">
+            <div class="w-full h-full bg-black bg-opacity-50 flex flex-col justify-between p-12 text-white">
+                <div>
+                    <h1 class="text-3xl font-bold text-white">AgriTrace</h1>
                 </div>
-            </form>
-            <div class="text-center mt-6">
-                <button type="button" id="how-to-use-btn" class="text-green-600 hover:text-green-800 text-sm font-medium underline">How to use this simulation?</button>
+                <div>
+                    <h2 class="text-4xl font-bold leading-tight">Transparency from Farm to Table.</h2>
+                    <p class="mt-4 text-lg max-w-lg">Our blockchain-powered platform ensures every step of the supply chain is tracked, verified, and transparent.</p>
+                </div>
+                <div></div>
             </div>
-             <div class="mt-4 text-xs text-gray-500 text-center">
-                <p class="font-bold">Test Accounts (pw: "password"):</p>
-                <p>FARMER_OD123, VERIFIER_01, DIST_01, AGENCY_01, RETAILER_01, CONSUMER_01</p>
+        </div>
+        <!-- Right Panel with Form -->
+        <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+            <div class="max-w-md w-full">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800" data-translate-key="portalTitle">Welcome to AgriTrace</h1>
+                    <p class="text-gray-500 mt-2" data-translate-key="loginPrompt">Login to your account to continue</p>
+                </div>
+                <form id="login-form">
+                    <div class="space-y-6">
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-gray-700" data-translate-key="userIdLabel">User ID</label>
+                            <input type="text" id="username" placeholder="e.g., FARMER_OD123" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" required>
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700" data-translate-key="passwordLabel">Password</label>
+                            <input type="password" id="password" value="password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" required>
+                        </div>
+                         <p id="login-error" class="text-red-500 text-sm hidden" data-translate-key="loginError">Invalid credentials. Please try again.</p>
+                        <button type="submit" class="w-full font-bold py-3 px-4 btn-primary flex items-center justify-center space-x-2" data-translate-key="loginBtn">
+                            <span>Login</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center mt-6">
+                    <button type="button" id="how-to-use-btn" class="text-green-600 hover:text-green-800 text-sm font-medium underline" data-translate-key="howToUseLink">How to use this simulation?</button>
+                </div>
+                 <div class="mt-4 text-xs text-gray-500 text-center bg-gray-50 p-3 rounded-lg border">
+                    <p class="font-bold" data-translate-key="testAccountsTitle">Test Accounts (pw: "password"):</p>
+                    <p>FARMER_OD123, VERIFIER_01, DIST_01, AGENCY_01, RETAILER_01, CONSUMER_01</p>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Universal Header for Dashboards -->
-    <header id="app-header" class="bg-white shadow-sm p-4 hidden">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold text-green-700">AgriTrace</h1>
-            <div>
-                <span id="user-info" class="text-sm text-gray-600 mr-4"></span>
-                <button id="logout-btn" class="text-sm bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600">Logout</button>
+    <header id="app-header" class="bg-white/90 backdrop-blur-lg shadow-sm sticky top-0 z-10 hidden">
+        <div class="max-w-screen-xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8 py-3">
+            <h1 class="text-2xl font-bold text-green-700">AgriTrace</h1>
+            <div class="flex items-center space-x-4">
+                <select id="language-switcher" class="bg-white border border-gray-300 rounded-md py-1.5 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    <option value="en">English</option>
+                    <option value="hi">हिन्दी</option>
+                </select>
+                <span id="user-info" class="text-sm text-gray-600 hidden sm:block"></span>
+                <button id="logout-btn" class="text-sm bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 btn-primary" data-translate-key="logoutBtn">Logout</button>
             </div>
         </div>
     </header>
 
     <!-- Farmer Dashboard -->
     <div id="farmer-dashboard" class="dashboard p-4 sm:p-6 lg:p-8">
-        <div class="max-w-7xl mx-auto">
-            <header class="text-center mb-8">
-                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Farmer Dashboard</h1>
-                <p class="text-gray-600 mt-2">Add and track your product batches through the supply chain.</p>
+        <div class="max-w-screen-xl mx-auto">
+            <header class="dashboard-header bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                     <div class="flex-shrink-0 bg-green-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7.014A8.003 8.003 0 0117.657 18.657z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 16.121A3 3 0 1014.12 11.88l-4.242 4.242z" />
+                        </svg>
+                     </div>
+                     <div>
+                        <h1 class="text-3xl font-bold text-gray-900" data-translate-key="farmerDashboardTitle">Farmer Dashboard</h1>
+                        <p class="text-gray-500 mt-1" data-translate-key="farmerDashboardSubtitle">Add and track your product batches through the supply chain.</p>
+                    </div>
+                </div>
             </header>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-1 space-y-6">
-                    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-md">
-                        <h2 class="text-2xl font-semibold mb-4">Add New Product Batch</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="form-card">
+                        <h2 class="text-xl font-semibold mb-4" data-translate-key="addBatchTitle">Add New Product Batch</h2>
                         <form id="farm-form">
                             <div class="space-y-4">
+                                <!-- Form fields -->
                                 <div>
-                                    <label for="crop-type" class="block text-sm font-medium text-gray-700">Crop Type</label>
-                                    <input type="text" id="crop-type" placeholder="e.g., Organic Tomatoes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                                    <label for="crop-type" class="block text-sm font-medium text-gray-700" data-translate-key="cropTypeLabel">Crop Type</label>
+                                    <input type="text" id="crop-type" placeholder="e.g., Organic Tomatoes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                                 </div>
                                 <div>
-                                    <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity (kg)</label>
-                                    <input type="number" id="quantity" placeholder="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                                    <label for="quantity" class="block text-sm font-medium text-gray-700" data-translate-key="quantityLabel">Quantity (kg)</label>
+                                    <input type="number" id="quantity" placeholder="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                                 </div>
                                 <div>
-                                    <label for="expected-price" class="block text-sm font-medium text-gray-700">Expected Price (₹/kg)</label>
-                                    <input type="number" step="1" id="expected-price" placeholder="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                                    <label for="expected-price" class="block text-sm font-medium text-gray-700" data-translate-key="expectedPriceLabel">Expected Price (₹/kg)</label>
+                                    <input type="number" step="1" id="expected-price" placeholder="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                                 </div>
                                 <div>
-                                    <label for="initial-quality" class="block text-sm font-medium text-gray-700">Initial Quality</label>
-                                    <select id="initial-quality" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
-                                        <option>Premium</option>
-                                        <option>Good</option>
-                                        <option>Standard</option>
+                                    <label for="initial-quality" class="block text-sm font-medium text-gray-700" data-translate-key="initialQualityLabel">Initial Quality</label>
+                                    <select id="initial-quality" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                        <option value="Premium" data-translate-key="qualityPremium">Premium</option>
+                                        <option value="Good" data-translate-key="qualityGood">Good</option>
+                                        <option value="Standard" data-translate-key="qualityStandard">Standard</option>
                                     </select>
                                 </div>
                                  <div>
-                                    <label for="harvest-date" class="block text-sm font-medium text-gray-700">Harvest Date</label>
-                                    <input type="date" id="harvest-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm" required>
+                                    <label for="harvest-date" class="block text-sm font-medium text-gray-700" data-translate-key="harvestDateLabel">Harvest Date</label>
+                                    <input type="date" id="harvest-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                                 </div>
                                 <div>
-                                    <label for="crop-image" class="block text-sm font-medium text-gray-700">Harvest Crop Image</label>
+                                    <label for="crop-image" class="block text-sm font-medium text-gray-700" data-translate-key="cropImageLabel">Harvest Crop Image</label>
                                     <input type="file" id="crop-image" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" required>
                                 </div>
                                 <img id="image-preview" src="" alt="Image Preview" class="hidden w-full h-auto rounded-lg mt-2"/>
-                                <button type="submit" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 btn-primary">
-                                    Create Batch
+                                <button type="submit" class="w-full font-bold py-3 px-4 btn-primary flex items-center justify-center space-x-2" data-translate-key="createBatchBtn">
+                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                                    <span>Create Batch</span>
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
-                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg border border-gray-200">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-3">My Products in Supply Chain</h2>
-                    <div id="batch-list-container" class="space-y-4">
-                        <p id="batch-placeholder" class="text-gray-500">No active batches. Add a new product to begin.</p>
+                <div class="lg:col-span-8 list-card">
+                    <div class="list-card-header">
+                        <h2 class="text-xl font-semibold" data-translate-key="myProductsTitle">My Products in Supply Chain</h2>
+                    </div>
+                    <div id="batch-list-container" class="p-4 space-y-3">
+                        <div id="batch-placeholder" class="text-center py-16">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                            <h3 class="mt-4 text-lg font-semibold text-gray-800" data-translate-key="noBatchesPlaceholder">No active batches</h3>
+                            <p class="text-gray-500 mt-1">Add a new product to begin tracking.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -152,322 +265,253 @@
 
     <!-- Logistics/Other Roles Dashboard -->
     <div id="logistics-dashboard" class="dashboard p-4 sm:p-6 lg:p-8">
-        <div class="max-w-4xl mx-auto">
-             <header id="logistics-header" class="text-center mb-8">
-                <h1 id="logistics-title" class="text-3xl sm:text-4xl font-bold text-gray-800">Logistics Dashboard</h1>
-                <p id="logistics-subtitle" class="text-gray-600 mt-2">Scan a batch QR code to view details and perform actions.</p>
+        <div class="max-w-5xl mx-auto">
+             <header id="logistics-header" class="dashboard-header bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div id="logistics-icon-container" class="flex-shrink-0 p-3 rounded-full"></div>
+                    <div>
+                        <h1 id="logistics-title" class="text-3xl font-bold text-gray-900"></h1>
+                        <p id="logistics-subtitle" class="text-gray-500 mt-1"></p>
+                    </div>
+                </div>
             </header>
-            <div id="scan-container" class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
+            <div id="scan-container" class="form-card max-w-lg mx-auto mt-8">
                 <form id="scan-form">
-                    <label for="scan-input" class="block text-lg font-medium text-gray-700">Enter or Scan Batch ID</label>
+                    <label for="scan-input" class="block text-lg font-semibold text-gray-700 mb-2" data-translate-key="scanOrEnterLabel">Enter or Scan Batch ID</label>
                     <div class="mt-2 flex items-center space-x-2">
-                         <input type="text" id="scan-input" placeholder="e.g., 167..." class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-lg" required>
-                         <button type="button" id="scan-qr-btn" class="p-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800" aria-label="Scan QR Code">
+                         <input type="text" id="scan-input" placeholder="e.g., 167..." class="block w-full text-lg rounded-md border-gray-300 shadow-sm" required>
+                         <button type="button" id="scan-qr-btn" class="p-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 btn-primary" aria-label="Scan QR Code">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h-1m-1-6v1M4 12H3m1-6h1m11 1V6m-1 11v-1m-5-6a3 3 0 100-6 3 3 0 000 6z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V6a2 2 0 012-2h2M4 16v2a2 2 0 002 2h2M16 4h2a2 2 0 012 2v2M16 20h2a2 2 0 002-2v-2" />
                             </svg>
                          </button>
                     </div>
-                    <button type="submit" class="mt-4 w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 btn-primary">
+                    <button type="submit" class="mt-4 w-full font-bold py-3 px-4 btn-primary" data-translate-key="findBatchBtn">
                         Find Batch
                     </button>
                 </form>
-                <p id="scan-error" class="text-red-500 text-sm mt-2 hidden">Batch not found.</p>
+                <p id="scan-error" class="text-red-500 text-sm mt-2 hidden" data-translate-key="scanError">Batch not found.</p>
             </div>
-            <div id="available-batches-container" class="hidden">
+            <div id="available-batches-container" class="hidden mt-8">
                  <!-- Batch cards will be injected here -->
             </div>
         </div>
     </div>
-
-    <!-- Batch Details Modal -->
-    <div id="batch-details-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4">
+    
+    <!-- Modals -->
+    <div id="batch-details-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4 z-20">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
-             <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 id="modal-title" class="text-xl font-bold text-green-700">Batch Details</h3>
-                <button id="close-modal" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+             <div class="p-5 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="modal-title" class="text-xl font-bold text-green-700"></h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-800">&times;</button>
              </div>
-             <div id="modal-content" class="p-6 overflow-y-auto"></div>
+             <div id="modal-content" class="p-6 overflow-y-auto bg-gray-50"></div>
         </div>
     </div>
     
-    <!-- QR Code Modal -->
-    <div id="qr-code-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm text-center p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Batch QR Code</h3>
-            <div id="qrcode" class="flex justify-center mb-4"></div>
-            <p id="qr-batch-id" class="text-gray-600 mb-6 font-mono"></p>
+    <div id="qr-code-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4 z-30">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm text-center p-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4" data-translate-key="qrModalTitle">Batch QR Code</h3>
+            <div id="qrcode" class="flex justify-center mb-4 p-4 bg-white border rounded-lg"></div>
+            <p id="qr-batch-id" class="text-gray-600 mb-6 font-mono text-sm"></p>
             <div class="flex space-x-4">
-                <button id="print-qr" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Print</button>
-                <button id="close-qr-modal" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400">Close</button>
+                <button id="print-qr" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700" data-translate-key="printBtn">Print</button>
+                <button id="close-qr-modal" class="w-full bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300" data-translate-key="closeBtn">Close</button>
             </div>
         </div>
     </div>
     
-    <!-- QR Scanner Modal -->
-    <div id="qr-scanner-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4">
+    <div id="qr-scanner-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4 z-40">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-md text-center p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Scan Batch QR Code</h3>
-            <div id="reader" class="w-full border-2 border-gray-300 rounded-lg overflow-hidden"></div>
-            <button id="close-scanner-modal" class="mt-4 w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400">Cancel</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4" data-translate-key="scanQrModalTitle">Scan Batch QR Code</h3>
+            <div id="reader" class="w-full border-4 border-gray-300 rounded-lg overflow-hidden"></div>
+            <button id="close-scanner-modal" class="mt-4 w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400" data-translate-key="cancelBtn">Cancel</button>
         </div>
     </div>
     
-    <!-- Instructions Modal -->
-    <div id="instructions-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4">
+    <div id="instructions-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4 z-30">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center">
-                 <h3 class="text-xl font-bold text-gray-800">How to Use AgriTrace Simulation</h3>
+                 <h3 class="text-xl font-bold text-gray-800" data-translate-key="instructionsTitle">How to Use AgriTrace Simulation</h3>
                  <button id="close-instructions-modal" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
             </div>
             <div class="p-6 overflow-y-auto text-gray-700 space-y-4">
-                <div>
-                    <h4 class="font-bold text-lg">Step 1: Farmer Creates a Batch</h4>
-                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
-                        <li>Login as <code class="bg-gray-200 px-1 rounded">FARMER_OD123</code> (pw: password).</li>
-                        <li>Fill out the form with crop details, including an image and expected price. Click "Create Batch".</li>
-                        <li>The new batch appears on the right with status "Pending Verification". Note the Batch ID from the QR code.</li>
-                        <li>Log out.</li>
-                    </ol>
-                </div>
-                <div>
-                    <h4 class="font-bold text-lg">Step 2: Authenticity Verification</h4>
-                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
-                        <li>Login as <code class="bg-gray-200 px-1 rounded">VERIFIER_01</code>.</li>
-                        <li>Scan or enter the Batch ID.</li>
-                        <li>In the modal, click "Approve Entry" to validate the farmer's record. The status changes to "Verified".</li>
-                        <li>Log out.</li>
-                    </ol>
-                </div>
                  <div>
-                    <h4 class="font-bold text-lg">Step 3: Distributor Purchase</h4>
+                    <h4 class="font-bold text-lg" data-translate-key="instructionsStep1Title">Step 1: Farmer Creates a Batch</h4>
                     <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
-                        <li>Login as <code class="bg-gray-200 px-1 rounded">DIST_01</code>. You'll see a list of verified batches.</li>
-                        <li>Click "View & Purchase" on the batch.</li>
-                        <li>Click "Confirm Purchase", then "Pay with UPI". A successful payment is simulated.</li>
-                        <li>Log out.</li>
-                    </ol>
-                </div>
-                 <div>
-                    <h4 class="font-bold text-lg">Step 4: Quality & Price Verification</h4>
-                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
-                        <li>Login as <code class="bg-gray-200 px-1 rounded">AGENCY_01</code>.</li>
-                        <li>Scan or enter the Batch ID.</li>
-                        <li>Verify the quality and price, then submit. This action is recorded immutably.</li>
-                        <li>Log out.</li>
-                    </ol>
-                </div>
-                 <div>
-                    <h4 class="font-bold text-lg">Step 5: Retailer Purchase</h4>
-                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
-                         <li>Login as <code class="bg-gray-200 px-1 rounded">RETAILER_01</code>. You'll see batches verified by the agency.</li>
-                        <li>Click "View & Purchase", then simulate the UPI payment to buy the batch.</li>
-                        <li>Log out.</li>
+                        <li data-translate-key="instructionsStep1_1">Login as <code class="bg-gray-200 px-1 rounded">FARMER_OD123</code> (pw: password).</li>
+                        <li data-translate-key="instructionsStep1_2">Fill out the form with crop details, including an image and expected price. Click "Create Batch".</li>
+                        <li data-translate-key="instructionsStep1_3">The new batch appears on the right with status "Pending Verification". Note the Batch ID from the QR code.</li>
+                        <li data-translate-key="instructionsStep1_4">Log out.</li>
                     </ol>
                 </div>
                 <div>
-                    <h4 class="font-bold text-lg">Step 6: Consumer Verification</h4>
+                    <h4 class="font-bold text-lg" data-translate-key="instructionsStep2Title">Step 2: Authenticity Verification</h4>
                     <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
-                         <li>Login as <code class="bg-gray-200 px-1 rounded">CONSUMER_01</code>.</li>
-                        <li>Scan the batch QR code (or enter the ID).</li>
-                        <li>You will see the complete, transparent, and unchangeable history of the product from farm to shelf.</li>
+                        <li data-translate-key="instructionsStep2_1">Login as <code class="bg-gray-200 px-1 rounded">VERIFIER_01</code>.</li>
+                        <li data-translate-key="instructionsStep2_2">Scan or enter the Batch ID.</li>
+                        <li data-translate-key="instructionsStep2_3">In the modal, click "Approve Entry" to validate the farmer's record. The status changes to "Verified".</li>
+                        <li data-translate-key="instructionsStep2_4">Log out.</li>
+                    </ol>
+                </div>
+                 <div>
+                    <h4 class="font-bold text-lg" data-translate-key="instructionsStep3Title">Step 3: Distributor Purchase</h4>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
+                        <li data-translate-key="instructionsStep3_1">Login as <code class="bg-gray-200 px-1 rounded">DIST_01</code>. You'll see a list of verified batches.</li>
+                        <li data-translate-key="instructionsStep3_2">Click "View & Purchase" on the batch.</li>
+                        <li data-translate-key="instructionsStep3_3">Click "Confirm Purchase", then "Pay with UPI". A successful payment is simulated.</li>
+                        <li data-translate-key="instructionsStep3_4">Log out.</li>
+                    </ol>
+                </div>
+                 <div>
+                    <h4 class="font-bold text-lg" data-translate-key="instructionsStep4Title">Step 4: Quality & Price Verification</h4>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
+                        <li data-translate-key="instructionsStep4_1">Login as <code class="bg-gray-200 px-1 rounded">AGENCY_01</code>.</li>
+                        <li data-translate-key="instructionsStep4_2">Scan or enter the Batch ID.</li>
+                        <li data-translate-key="instructionsStep4_3">Verify the quality and price, then submit. This action is recorded immutably.</li>
+                        <li data-translate-key="instructionsStep4_4">Log out.</li>
+                    </ol>
+                </div>
+                 <div>
+                    <h4 class="font-bold text-lg" data-translate-key="instructionsStep5Title">Step 5: Retailer Purchase</h4>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
+                         <li data-translate-key="instructionsStep5_1">Login as <code class="bg-gray-200 px-1 rounded">RETAILER_01</code>. You'll see batches verified by the agency.</li>
+                        <li data-translate-key="instructionsStep5_2">Click "View & Purchase", then simulate the UPI payment to buy the batch.</li>
+                        <li data-translate-key="instructionsStep5_3">Log out.</li>
+                    </ol>
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg" data-translate-key="instructionsStep6Title">Step 6: Consumer Verification</h4>
+                    <ol class="list-decimal list-inside mt-2 space-y-1 text-sm">
+                         <li data-translate-key="instructionsStep6_1">Login as <code class="bg-gray-200 px-1 rounded">CONSUMER_01</code>.</li>
+                        <li data-translate-key="instructionsStep6_2">Scan the batch QR code (or enter the ID).</li>
+                        <li data-translate-key="instructionsStep6_3">You will see the complete, transparent, and unchangeable history of the product from farm to shelf.</li>
                     </ol>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- UPI Payment Modal -->
-    <div id="upi-payment-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm text-center p-6">
+    <div id="upi-payment-modal" class="modal fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4 z-40">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm text-center p-8">
             <div id="upi-initial-view">
-                <h3 class="text-xl font-bold text-gray-800 mb-2">Confirm Purchase</h3>
-                <p class="text-gray-600 mb-4">Proceed to pay securely via UPI.</p>
-                <img src="https://i.imgur.com/g27h2p3.png" alt="UPI Logos" class="w-48 mx-auto mb-6">
-                <button id="pay-upi-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700">Pay with UPI</button>
-                <button id="cancel-upi-btn" class="mt-2 w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400">Cancel</button>
+                <img src="https://i.imgur.com/g27h2p3.png" alt="UPI Logos" class="w-48 mx-auto mb-4">
+                <h3 class="text-2xl font-bold text-gray-800 mb-2" data-translate-key="upiConfirmTitle">Confirm Purchase</h3>
+                <p class="text-gray-500 mb-6" data-translate-key="upiConfirmSubtitle">Proceed to pay securely via UPI.</p>
+                <button id="pay-upi-btn" class="w-full font-bold py-3 px-4 btn-primary" data-translate-key="payWithUpiBtn">Pay with UPI</button>
+                <button id="cancel-upi-btn" class="mt-2 w-full bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300" data-translate-key="cancelBtn">Cancel</button>
             </div>
             <div id="upi-processing-view" class="hidden">
-                 <h3 class="text-xl font-bold text-gray-800 mb-4">Processing Payment...</h3>
+                 <h3 class="text-xl font-bold text-gray-800 mb-4" data-translate-key="upiProcessingTitle">Processing Payment...</h3>
                  <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                 <p class="text-gray-600 mt-4">Please wait, do not close this window.</p>
+                 <p class="text-gray-600 mt-4" data-translate-key="upiProcessingSubtitle">Please wait, do not close this window.</p>
             </div>
             <div id="upi-success-view" class="hidden">
-                <svg class="w-16 h-16 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <h3 class="text-2xl font-bold text-green-600 mt-4">Payment Successful!</h3>
-                <p class="text-gray-600 mt-2">Updating blockchain record...</p>
+                <svg class="w-20 h-20 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <h3 class="text-2xl font-bold text-green-600 mt-4" data-translate-key="upiSuccessTitle">Payment Successful!</h3>
+                <p class="text-gray-600 mt-2" data-translate-key="upiSuccessSubtitle">Updating blockchain record...</p>
             </div>
         </div>
     </div>
 
 
     <script>
-    // --- MOCK USER DATABASE ---
-    const users = {
-        "FARMER_OD123": { password: "password", role: "FARMER" },
-        "VERIFIER_01": { password: "password", role: "VERIFIER" },
-        "DIST_01": { password: "password", role: "DISTRIBUTOR" },
-        "AGENCY_01": { password: "password", role: "AGENCY_INSPECTOR" },
-        "RETAILER_01": { password: "password", role: "RETAILER" },
-        "CONSUMER_01": { password: "password", role: "CONSUMER" }
+    // --- Translation Data (unchanged) ---
+    const translations = {
+        en: {
+            portalTitle: "Welcome to AgriTrace", loginPrompt: "Login to your account to continue", userIdLabel: "User ID", passwordLabel: "Password", loginError: "Invalid credentials. Please try again.", loginBtn: "Login", howToUseLink: "How to use this simulation?", testAccountsTitle: "Test Accounts (pw: \"password\"):", logoutBtn: "Logout", loggedInAs: "Logged in as:", farmerDashboardTitle: "Farmer Dashboard", farmerDashboardSubtitle: "Add and track your product batches through the supply chain.", addBatchTitle: "Add New Product Batch", cropTypeLabel: "Crop Type", quantityLabel: "Quantity (kg)", expectedPriceLabel: "Expected Price (₹/kg)", initialQualityLabel: "Initial Quality", qualityPremium: "Premium", qualityGood: "Good", qualityStandard: "Standard", harvestDateLabel: "Harvest Date", cropImageLabel: "Harvest Crop Image", createBatchBtn: "Create Batch", myProductsTitle: "My Products in Supply Chain", noBatchesPlaceholder: "No active batches", scanOrEnterLabel: "Enter or Scan Batch ID", findBatchBtn: "Find Batch", scanError: "Batch not found.", qrModalTitle: "Batch QR Code", printBtn: "Print", closeBtn: "Close", scanQrModalTitle: "Scan Batch QR Code", cancelBtn: "Cancel", instructionsTitle: "How to Use AgriTrace Simulation", instructionsStep1Title: "Step 1: Farmer Creates a Batch", instructionsStep1_1: "Login as <code class=\"bg-gray-200 px-1 rounded\">FARMER_OD123</code> (pw: password).", instructionsStep1_2: "Fill out the form with crop details, including an image and expected price. Click \"Create Batch\".", instructionsStep1_3: "The new batch appears on the right with status \"Pending Verification\". Note the Batch ID from the QR code.", instructionsStep1_4: "Log out.", instructionsStep2Title: "Step 2: Authenticity Verification", instructionsStep2_1: "Login as <code class=\"bg-gray-200 px-1 rounded\">VERIFIER_01</code>.", instructionsStep2_2: "Scan or enter the Batch ID.", instructionsStep2_3: "In the modal, click \"Approve Entry\" to validate the farmer's record. The status changes to \"Verified\".", instructionsStep2_4: "Log out.", instructionsStep3Title: "Step 3: Distributor Purchase", instructionsStep3_1: "Login as <code class=\"bg-gray-200 px-1 rounded\">DIST_01</code>. You'll see a list of verified batches.", instructionsStep3_2: "Click \"View & Purchase\" on the batch.", instructionsStep3_3: "Click \"Confirm Purchase\", then \"Pay with UPI\". A successful payment is simulated.", instructionsStep3_4: "Log out.", instructionsStep4Title: "Step 4: Quality & Price Verification", instructionsStep4_1: "Login as <code class=\"bg-gray-200 px-1 rounded\">AGENCY_01</code>.", instructionsStep4_2: "Scan or enter the Batch ID.", instructionsStep4_3: "Verify the quality and price, then submit. This action is recorded immutably.", instructionsStep4_4: "Log out.", instructionsStep5Title: "Step 5: Retailer Purchase", instructionsStep5_1: "Login as <code class=\"bg-gray-200 px-1 rounded\">RETAILER_01</code>. You'll see batches verified by the agency.", instructionsStep5_2: "Click \"View & Purchase\", then simulate the UPI payment to buy the batch.", instructionsStep5_3: "Log out.", instructionsStep6Title: "Step 6: Consumer Verification", instructionsStep6_1: "Login as <code class=\"bg-gray-200 px-1 rounded\">CONSUMER_01</code>.", instructionsStep6_2: "Scan the batch QR code (or enter the ID).", instructionsStep6_3: "You will see the complete, transparent, and unchangeable history of the product from farm to shelf.", upiConfirmTitle: "Confirm Purchase", upiConfirmSubtitle: "Proceed to pay securely via UPI.", payWithUpiBtn: "Pay with UPI", upiProcessingTitle: "Processing Payment...", upiProcessingSubtitle: "Please wait, do not close this window.", upiSuccessTitle: "Payment Successful!", upiSuccessSubtitle: "Updating blockchain record...",
+            dashboardTitle_VERIFIER: "Verification Dashboard", dashboardSubtitle_VERIFIER: "Scan a batch ID to verify farmer's entry.", dashboardTitle_DISTRIBUTOR: "Available Produce", dashboardSubtitle_DISTRIBUTOR: "Select a batch to purchase from a farmer.", dashboardTitle_AGENCY_INSPECTOR: "Quality & Price Verification", dashboardSubtitle_AGENCY_INSPECTOR: "Scan a batch ID to verify its quality and price.", dashboardTitle_RETAILER: "Available Batches", dashboardSubtitle_RETAILER: "Select a batch to purchase from a distributor.", dashboardTitle_CONSUMER: "Product Traceability Portal", dashboardSubtitle_CONSUMER: "Scan a product QR code to see its full history.",
+            status_PENDING_VERIFICATION: "Pending Verification", status_VERIFIED: "Verified", status_SOLD_TO_DISTRIBUTOR: "With Distributor", status_QUALITY_PRICE_VERIFIED: "Agency Verified", status_READY_FOR_SALE: "At Retailer", status_REJECTED_BY_VERIFIER: "Rejected",
+            batchModalTitle: "Batch #{batchId} - {cropName}", initialInfoTitle: "Initial Batch Information", quantity: "Quantity", harvestDate: "Harvest Date", initialQuality: "Initial Quality", farmerPrice: "Farmer's Expected Price", actions: "Actions", ledger: "Blockchain Ledger", noBatchesAvailable: "No batches currently available for {role}.", viewAndPurchase: "View & Purchase",
+            action_FarmerEntryVerified: "Farmer Entry Verified", action_FarmerEntryRejected: "Farmer Entry Rejected", action_PurchaseFromFarmer: "Purchase from Farmer", action_QualityPriceCertified: "Quality & Price Certified", action_PurchaseFromDistributor: "Purchase from Distributor", action_BatchCreated: "Batch Created (Genesis Block)",
+            alert_fillAllFields: "Please fill out all fields, including price, date, and image.", showQr: "Show QR", details: "Details"
+        },
+        hi: {
+            portalTitle: "एग्रीट्रेस में आपका स्वागत है", loginPrompt: "जारी रखने के लिए अपने खाते में लॉग इन करें", userIdLabel: "उपयोगकर्ता आईडी", passwordLabel: "पासवर्ड", loginError: "अमान्य क्रेडेंशियल। कृपया पुन: प्रयास करें।", loginBtn: "लॉग इन करें", howToUseLink: "इस सिमुलेशन का उपयोग कैसे करें?", testAccountsTitle: "टेस्ट खाते (pw: \"password\"):", logoutBtn: "लॉग आउट", loggedInAs: "के रूप में लॉग इन:", farmerDashboardTitle: "किसान डैशबोर्ड", farmerDashboardSubtitle: "आपूर्ति श्रृंखला के माध्यम से अपने उत्पाद बैचों को जोड़ें और ट्रैक करें।", addBatchTitle: "नया उत्पाद बैच जोड़ें", cropTypeLabel: "फसल का प्रकार", quantityLabel: "मात्रा (किग्रा)", expectedPriceLabel: "अपेक्षित मूल्य (₹/किग्रा)", initialQualityLabel: "प्रारंभिक गुणवत्ता", qualityPremium: "प्रीमियम", qualityGood: "अच्छा", qualityStandard: "मानक", harvestDateLabel: "कटाई की तारीख", cropImageLabel: "कटाई की फसल की छवि", createBatchBtn: "बैच बनाएं", myProductsTitle: "आपूर्ति श्रृंखला में मेरे उत्पाद", noBatchesPlaceholder: "कोई सक्रिय बैच नहीं", scanOrEnterLabel: "बैच आईडी दर्ज करें या स्कैन करें", findBatchBtn: "बैच खोजें", scanError: "बैच नहीं मिला।", qrModalTitle: "बैच क्यूआर कोड", printBtn: "प्रिंट", closeBtn: "बंद करें", scanQrModalTitle: "बैच क्यूआर कोड स्कैन करें", cancelBtn: "रद्द करें", instructionsTitle: "एग्रीट्रेस सिमुलेशन का उपयोग कैसे करें", instructionsStep1Title: "चरण 1: किसान एक बैच बनाता है", instructionsStep1_1: "<code class=\"bg-gray-200 px-1 rounded\">FARMER_OD123</code> (pw: password) के रूप में लॉग इन करें।", instructionsStep1_2: "फसल विवरण, चित्र और अपेक्षित मूल्य सहित फ़ॉर्म भरें। \"बैच बनाएं\" पर क्लिक करें।", instructionsStep1_3: "नया बैच दाईं ओर \"सत्यापन लंबित\" स्थिति के साथ दिखाई देता है। क्यूआर कोड से बैच आईडी नोट करें।", instructionsStep1_4: "लॉग आउट करें।", instructionsStep2Title: "चरण 2: प्रामाणिकता सत्यापन", instructionsStep2_1: "<code class=\"bg-gray-200 px-1 rounded\">VERIFIER_01</code> के रूप में लॉग इन करें।", instructionsStep2_2: "बैच आईडी को स्कैन या दर्ज करें।", instructionsStep2_3: "मोडल में, किसान के रिकॉर्ड को मान्य करने के लिए \"प्रविष्टि स्वीकृत करें\" पर क्लिक करें। स्थिति \"सत्यापित\" में बदल जाती है।", instructionsStep2_4: "लॉग आउट करें।", instructionsStep3Title: "चरण 3: वितरक खरीद", instructionsStep3_1: "<code class=\"bg-gray-200 px-1 rounded\">DIST_01</code> के रूप में लॉग इन करें। आपको सत्यापित बैचों की एक सूची दिखाई देगी।", instructionsStep3_2: "बैच पर \"देखें और खरीदें\" पर क्लिक करें।", instructionsStep3_3: "\"खरीद की पुष्टि करें\" पर क्लिक करें, फिर \"UPI से भुगतान करें\"। एक सफल भुगतान का अनुकरण किया जाता है।", instructionsStep3_4: "लॉग आउट करें।", instructionsStep4Title: "चरण 4: गुणवत्ता और मूल्य सत्यापन", instructionsStep4_1: "<code class=\"bg-gray-200 px-1 rounded\">AGENCY_01</code> के रूप में लॉग इन करें।", instructionsStep4_2: "बैच आईडी को स्कैन या दर्ज करें।", instructionsStep4_3: "गुणवत्ता और कीमत को सत्यापित करें, फिर सबमिट करें। यह कार्रवाई अपरिवर्तनीय रूप से दर्ज की जाती है।", instructionsStep4_4: "लॉग आउट करें।", instructionsStep5Title: "चरण 5: खुदरा विक्रेता खरीद", instructionsStep5_1: "<code class=\"bg-gray-200 px-1 rounded\">RETAILER_01</code> के रूप में लॉग इन करें। आपको एजेंसी द्वारा सत्यापित बैच दिखाई देंगे।", instructionsStep5_2: "\"देखें और खरीदें\" पर क्लिक करें, फिर बैच खरीदने के लिए UPI भुगतान का अनुकरण करें।", instructionsStep5_3: "लॉग आउट करें।", instructionsStep6Title: "चरण 6: उपभोक्ता सत्यापन", instructionsStep6_1: "<code class=\"bg-gray-200 px-1 rounded\">CONSUMER_01</code> के रूप में लॉग इन करें।", instructionsStep6_2: "बैच क्यूआर कोड को स्कैन करें (या आईडी दर्ज करें)।", instructionsStep6_3: "आप खेत से शेल्फ तक उत्पाद का पूरा, पारदर्शी और अपरिवर्तनीय इतिहास देखेंगे।", upiConfirmTitle: "खरीद की पुष्टि करें", upiConfirmSubtitle: "UPI के माध्यम से सुरक्षित रूप से भुगतान करने के लिए आगे बढ़ें।", payWithUpiBtn: "UPI से भुगतान करें", upiProcessingTitle: "भुगतान संसाधित हो रहा है...", upiProcessingSubtitle: "कृपया प्रतीक्षा करें, इस विंडो को बंद न करें।", upiSuccessTitle: "भुगतान सफल!", upiSuccessSubtitle: "ब्लॉकचेन रिकॉर्ड अपडेट किया जा रहा है...",
+            dashboardTitle_VERIFIER: "सत्यापन डैशबोर्ड", dashboardSubtitle_VERIFIER: "किसान की प्रविष्टि को सत्यापित करने के लिए एक बैच आईडी स्कैन करें।", dashboardTitle_DISTRIBUTOR: "उपलब्ध उपज", dashboardSubtitle_DISTRIBUTOR: "एक किसान से खरीदने के लिए एक बैच का चयन करें।", dashboardTitle_AGENCY_INSPECTOR: "गुणवत्ता और मूल्य सत्यापन", dashboardSubtitle_AGENCY_INSPECTOR: "इसकी गुणवत्ता और कीमत को सत्यापित करने के लिए एक बैच आईडी स्कैन करें।", dashboardTitle_RETAILER: "उपलब्ध बैच", dashboardSubtitle_RETAILER: "एक वितरक से खरीदने के लिए एक बैच का चयन करें।", dashboardTitle_CONSUMER: "उत्पाद ट्रेसेबिलिटी पोर्टल", dashboardSubtitle_CONSUMER: "इसके पूरे इतिहास को देखने के लिए एक उत्पाद क्यूआर कोड स्कैन करें।",
+            status_PENDING_VERIFICATION: "सत्यापन लंबित है", status_VERIFIED: "सत्यापित", status_SOLD_TO_DISTRIBUTOR: "वितरक के साथ", status_QUALITY_PRICE_VERIFIED: "एजेंसी सत्यापित", status_READY_FOR_SALE: "फुटकर विक्रेता के पास", status_REJECTED_BY_VERIFIER: "अस्वीकृत",
+            batchModalTitle: "बैच #{batchId} - {cropName}", initialInfoTitle: "प्रारंभिक बैच सूचना", quantity: "मात्रा", harvestDate: "कटाई की तारीख", initialQuality: "प्रारंभिक गुणवत्ता", farmerPrice: "किसान की अपेक्षित कीमत", actions: "कार्रवाई", ledger: "ब्लॉकचेन लेजर", noBatchesAvailable: "{role} के लिए वर्तमान में कोई बैच उपलब्ध नहीं है।", viewAndPurchase: "देखें और खरीदें",
+            action_FarmerEntryVerified: "किसान प्रविष्टि सत्यापित", action_FarmerEntryRejected: "किसान प्रविष्टि अस्वीकृत", action_PurchaseFromFarmer: "किसान से खरीदें", action_QualityPriceCertified: "गुणवत्ता और मूल्य प्रमाणित", action_PurchaseFromDistributor: "वितरक से खरीदें", action_BatchCreated: "बैच बनाया गया (जेनेसिस ब्लॉक)",
+            alert_fillAllFields: "कृपया मूल्य, दिनांक और छवि सहित सभी फ़ील्ड भरें।", showQr: "क्यूआर दिखाएं", details: "विवरण"
+        }
     };
 
-    // --- DOM Elements ---
-    const loginContainer = document.getElementById('login-container');
-    const loginForm = document.getElementById('login-form');
-    const loginError = document.getElementById('login-error');
-    const appHeader = document.getElementById('app-header');
-    const userInfo = document.getElementById('user-info');
-    const logoutBtn = document.getElementById('logout-btn');
-    const howToUseBtn = document.getElementById('how-to-use-btn');
-    
-    const farmerDashboard = document.getElementById('farmer-dashboard');
-    const logisticsDashboard = document.getElementById('logistics-dashboard');
-    
-    const farmForm = document.getElementById('farm-form');
-    const cropImageInput = document.getElementById('crop-image');
-    const imagePreview = document.getElementById('image-preview');
-    const batchListContainer = document.getElementById('batch-list-container');
-    const batchPlaceholder = document.getElementById('batch-placeholder');
+    // --- MOCK USER DATABASE (unchanged) ---
+    const users = { "FARMER_OD123": { password: "password", role: "FARMER" }, "VERIFIER_01": { password: "password", role: "VERIFIER" }, "DIST_01": { password: "password", role: "DISTRIBUTOR" }, "AGENCY_01": { password: "password", role: "AGENCY_INSPECTOR" }, "RETAILER_01": { password: "password", role: "RETAILER" }, "CONSUMER_01": { password: "password", role: "CONSUMER" } };
 
-    const logisticsHeader = document.getElementById('logistics-header');
-    const logisticsTitle = document.getElementById('logistics-title');
-    const logisticsSubtitle = document.getElementById('logistics-subtitle');
-    const scanContainer = document.getElementById('scan-container');
-    const availableBatchesContainer = document.getElementById('available-batches-container');
-    const scanForm = document.getElementById('scan-form');
-    const scanInput = document.getElementById('scan-input');
-    const scanError = document.getElementById('scan-error');
-    const scanQrBtn = document.getElementById('scan-qr-btn');
-    
-    const modal = document.getElementById('batch-details-modal');
-    const closeModalBtn = document.getElementById('close-modal');
-    const modalContent = document.getElementById('modal-content');
-    const modalTitle = document.getElementById('modal-title');
-    
-    const qrModal = document.getElementById('qr-code-modal');
-    const closeQrModalBtn = document.getElementById('close-qr-modal');
-    const printQrBtn = document.getElementById('print-qr');
-    
-    const qrScannerModal = document.getElementById('qr-scanner-modal');
-    const closeScannerModalBtn = document.getElementById('close-scanner-modal');
-    
-    const instructionsModal = document.getElementById('instructions-modal');
-    const closeInstructionsModalBtn = document.getElementById('close-instructions-modal');
-    
-    const upiPaymentModal = document.getElementById('upi-payment-modal');
-    const upiInitialView = document.getElementById('upi-initial-view');
-    const upiProcessingView = document.getElementById('upi-processing-view');
-    const upiSuccessView = document.getElementById('upi-success-view');
-    const payUpiBtn = document.getElementById('pay-upi-btn');
-    const cancelUpiBtn = document.getElementById('cancel-upi-btn');
+    // --- DOM Elements (unchanged) ---
+    const loginContainer = document.getElementById('login-container'); const appHeader = document.getElementById('app-header'); const userInfo = document.getElementById('user-info'); const logoutBtn = document.getElementById('logout-btn'); const farmerDashboard = document.getElementById('farmer-dashboard'); const logisticsDashboard = document.getElementById('logistics-dashboard'); const farmForm = document.getElementById('farm-form'); const cropImageInput = document.getElementById('crop-image'); const imagePreview = document.getElementById('image-preview'); const batchListContainer = document.getElementById('batch-list-container'); const batchPlaceholder = document.getElementById('batch-placeholder'); const logisticsHeader = document.getElementById('logistics-header'); const logisticsIconContainer = document.getElementById('logistics-icon-container'); const logisticsTitle = document.getElementById('logistics-title'); const logisticsSubtitle = document.getElementById('logistics-subtitle'); const scanContainer = document.getElementById('scan-container'); const availableBatchesContainer = document.getElementById('available-batches-container'); const scanForm = document.getElementById('scan-form'); const scanInput = document.getElementById('scan-input'); const scanError = document.getElementById('scan-error'); const scanQrBtn = document.getElementById('scan-qr-btn'); const modal = document.getElementById('batch-details-modal'); const closeModalBtn = document.getElementById('close-modal'); const modalContent = document.getElementById('modal-content'); const modalTitle = document.getElementById('modal-title'); const languageSwitcher = document.getElementById('language-switcher');
 
-
-    // --- State Management ---
-    let batches = []; // Array to hold all product batches
-    let currentUser = null;
-    let html5QrCode;
-    let currentPaymentCallback = null;
-
-    // --- Functions ---
+    // --- State Management (unchanged) ---
+    let batches = []; let currentUser = null; let html5QrCode; let currentPaymentCallback = null; let currentLanguage = 'en';
     
-    function handleLogin(e) {
-        e.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        const user = users[username];
-
-        if (user && user.password === password) {
-            currentUser = { id: username, role: user.role };
-            loginContainer.style.display = 'none';
-            appHeader.style.display = 'flex';
-            userInfo.textContent = `Logged in as: ${currentUser.id} (${currentUser.role})`;
-            loginError.classList.add('hidden');
-            
-            farmerDashboard.style.display = 'none';
-            logisticsDashboard.style.display = 'none';
-
-            if (currentUser.role === 'FARMER') {
-                farmerDashboard.style.display = 'block';
-                renderBatches();
-            } else {
-                logisticsDashboard.style.display = 'block';
-                if (!html5QrCode) {
-                    html5QrCode = new Html5Qrcode("reader");
-                }
-                setupLogisticsDashboard();
-            }
-        } else {
-            loginError.classList.remove('hidden');
+    // --- JS LOGIC (Mostly unchanged, except render functions) ---
+    function setLanguage(lang) {
+        currentLanguage = lang; localStorage.setItem('agriTraceLang', lang); languageSwitcher.value = lang;
+        document.querySelectorAll('[data-translate-key]').forEach(el => {
+            const key = el.dataset.translateKey; const translation = translations[lang][key];
+            if (translation) { el.innerHTML = translation; }
+        });
+        if (currentUser) {
+            userInfo.textContent = `${translations[currentLanguage].loggedInAs} ${currentUser.id} (${currentUser.role})`;
+            if (currentUser.role === 'FARMER') { renderBatches(); } else { setupLogisticsDashboard(); }
         }
     }
 
-    function setupLogisticsDashboard() {
-        scanContainer.style.display = 'block';
-        availableBatchesContainer.classList.add('hidden');
-        availableBatchesContainer.innerHTML = '';
+    function handleLogin(e) {
+        e.preventDefault();
+        const user = users[document.getElementById('username').value];
+        if (user && user.password === document.getElementById('password').value) {
+            currentUser = { id: document.getElementById('username').value, role: user.role };
+            loginContainer.style.display = 'none'; appHeader.style.display = 'flex';
+            userInfo.textContent = `${translations[currentLanguage].loggedInAs} ${currentUser.id} (${currentUser.role})`;
+            document.getElementById('login-error').classList.add('hidden');
+            farmerDashboard.style.display = 'none'; logisticsDashboard.style.display = 'none';
+            if (currentUser.role === 'FARMER') {
+                farmerDashboard.style.display = 'block'; renderBatches();
+            } else {
+                logisticsDashboard.style.display = 'block'; if (!html5QrCode) { html5QrCode = new Html5Qrcode("reader"); }
+                setupLogisticsDashboard();
+            }
+        } else { document.getElementById('login-error').classList.remove('hidden'); }
+    }
 
-        const rolesWithLists = ['DISTRIBUTOR', 'RETAILER'];
-        if (rolesWithLists.includes(currentUser.role)) {
-            scanContainer.style.display = 'none';
-            availableBatchesContainer.classList.remove('hidden');
-            renderAvailableBatches();
-        } 
+    function setupLogisticsDashboard() {
+        const role = currentUser.role;
+        scanContainer.style.display = ['DISTRIBUTOR', 'RETAILER'].includes(role) ? 'none' : 'block';
+        availableBatchesContainer.style.display = ['DISTRIBUTOR', 'RETAILER'].includes(role) ? 'block' : 'none';
+        if (['DISTRIBUTOR', 'RETAILER'].includes(role)) { renderAvailableBatches(); }
         
-        const titles = {
-            VERIFIER: "Verification Dashboard",
-            DISTRIBUTOR: "Available Produce for Purchase",
-            AGENCY_INSPECTOR: "Quality & Price Verification",
-            RETAILER: "Available Batches for Purchase",
-            CONSUMER: "Product Traceability Portal",
+        logisticsTitle.textContent = translations[currentLanguage][`dashboardTitle_${role}`] || "Dashboard";
+        logisticsSubtitle.textContent = translations[currentLanguage][`dashboardSubtitle_${role}`] || "Please proceed.";
+        
+        const icons = {
+            VERIFIER: { svg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>', bg: 'bg-purple-100' },
+            DISTRIBUTOR: { svg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h8a1 1 0 001-1z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h2a1 1 0 001-1V7a1 1 0 00-1-1h-2" /></svg>', bg: 'bg-blue-100' },
+            AGENCY_INSPECTOR: { svg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>', bg: 'bg-teal-100' },
+            RETAILER: { svg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>', bg: 'bg-amber-100' },
+            CONSUMER: { svg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>', bg: 'bg-rose-100' }
         };
-        const subtitles = {
-            VERIFIER: "Scan a batch ID to verify farmer's entry.",
-            DISTRIBUTOR: "Select a batch to purchase from a farmer.",
-            AGENCY_INSPECTOR: "Scan a batch ID to verify its quality and price.",
-            RETAILER: "Select a batch to purchase from a distributor.",
-            CONSUMER: "Scan a product QR code to see its full history.",
-        };
-        logisticsTitle.textContent = titles[currentUser.role] || "Logistics Dashboard";
-        logisticsSubtitle.textContent = subtitles[currentUser.role] || "Scan or enter a Batch ID.";
+        logisticsIconContainer.innerHTML = icons[role].svg;
+        logisticsIconContainer.className = `flex-shrink-0 p-3 rounded-full ${icons[role].bg}`;
     }
 
     function handleLogout() {
-        currentUser = null;
-        appHeader.style.display = 'none';
-        farmerDashboard.style.display = 'none';
-        logisticsDashboard.style.display = 'none';
-        loginContainer.style.display = 'flex';
+        currentUser = null; appHeader.style.display = 'none'; farmerDashboard.style.display = 'none';
+        logisticsDashboard.style.display = 'none'; loginContainer.style.display = 'flex';
         document.getElementById('login-form').reset();
     }
 
     function renderBatches() {
         if (!currentUser || currentUser.role !== 'FARMER') return;
-        
         batchPlaceholder.style.display = batches.length === 0 ? 'block' : 'none';
-        batchListContainer.innerHTML = '';
-
+        batchListContainer.innerHTML = batches.length === 0 ? batchPlaceholder.outerHTML : '';
         batches.forEach(batch => {
             const statusInfo = getStatusInfo(batch.status);
             const card = document.createElement('div');
-            card.className = 'batch-card bg-white p-4 border border-gray-200 rounded-lg flex justify-between items-center';
-            card.innerHTML = `
-                <div class="flex items-center">
-                     <img src="${batch.details.imageUrl || 'https://placehold.co/60x60/e2e8f0/333?text=Crop'}" alt="Crop Image" class="w-12 h-12 rounded-md object-cover mr-4">
-                    <div>
-                        <p class="font-bold text-lg">${batch.details.crop}</p>
-                        <p class="text-sm text-gray-500">${batch.details.quantity} - Harvest: ${batch.details.harvestDate}</p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <span class="text-sm font-semibold px-3 py-1 rounded-full ${statusInfo.bgColor} ${statusInfo.textColor}">${statusInfo.text}</span>
-                    <div class="mt-2 space-x-2">
-                        <button data-id="${batch.id}" class="show-qr-btn text-sm bg-green-200 hover:bg-green-300 text-green-800 font-semibold py-1 px-3 rounded-lg">Show QR</button>
-                        <button data-id="${batch.id}" class="view-details-btn text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded-lg">Details</button>
-                    </div>
-                </div>
-            `;
+            card.className = 'batch-card bg-white p-4 border border-gray-200 rounded-lg flex items-center justify-between';
+            card.innerHTML = `<div class="flex items-center space-x-4 flex-grow"><img src="${batch.details.imageUrl || 'https://placehold.co/60x60/e2e8f0/333?text=Crop'}" alt="Crop Image" class="w-16 h-16 rounded-lg object-cover"><div><p class="font-bold text-lg text-gray-800">${batch.details.crop}</p><p class="text-sm text-gray-500">${batch.details.quantity} &bull; ${translations[currentLanguage].harvestDate}: ${batch.details.harvestDate}</p></div></div><div class="flex items-center space-x-4 ml-4"><span class="text-sm font-semibold px-3 py-1.5 rounded-full ${statusInfo.bgColor} ${statusInfo.textColor}">${statusInfo.text}</span><div class="flex items-center space-x-2"><button data-id="${batch.id}" class="show-qr-btn bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-3 rounded-lg text-sm border border-gray-300 flex items-center space-x-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 5a1 1 0 011-1h8a1 1 0 011 1v8a1 1 0 01-1 1H6a1 1 0 01-1-1V5zM3 3a3 3 0 013-3h8a3 3 0 013 3v8a3 3 0 01-3 3H6a3 3 0 01-3-3V3zm3 8h2v2H6v-2zm4 0h2v2h-2v-2zm-4-4h2v2H6V7zm4 0h2v2h-2V7z"></path></svg><span>${translations[currentLanguage].showQr}</span></button><button data-id="${batch.id}" class="view-details-btn text-white bg-gray-800 hover:bg-black font-semibold py-2 px-4 rounded-lg text-sm">${translations[currentLanguage].details}</button></div></div>`;
             batchListContainer.appendChild(card);
         });
     }
@@ -475,397 +519,142 @@
     function renderAvailableBatches() {
         const targetStatus = currentUser.role === 'DISTRIBUTOR' ? 'VERIFIED' : 'QUALITY_PRICE_VERIFIED';
         const available = batches.filter(b => b.status === targetStatus);
-
         if (available.length === 0) {
-            availableBatchesContainer.innerHTML = `<p class="text-center text-gray-500 bg-white p-8 rounded-lg shadow-lg">No batches currently available for ${currentUser.role.toLowerCase()}.</p>`;
+            availableBatchesContainer.innerHTML = `<div class="text-center py-16 bg-white rounded-lg shadow-sm border"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg><h3 class="mt-4 text-lg font-semibold text-gray-800">${translations[currentLanguage].noBatchesAvailable.replace('{role}', currentUser.role.toLowerCase())}</h3><p class="text-gray-500 mt-1">Check back later for new inventory.</p></div>`;
             return;
         }
-
         let cardsHTML = '<div class="space-y-4">';
         available.forEach(batch => {
-            const statusInfo = getStatusInfo(batch.status);
-             cardsHTML += `
-                <div class="batch-card bg-white p-4 border border-gray-200 rounded-lg flex justify-between items-center">
-                    <div class="flex items-center">
-                         <img src="${batch.details.imageUrl}" alt="Crop Image" class="w-12 h-12 rounded-md object-cover mr-4">
-                        <div>
-                            <p class="font-bold text-lg">${batch.details.crop}</p>
-                            <p class="text-sm text-gray-500">${batch.details.quantity} | Farmer Price: ₹${batch.details.expectedPrice}/kg</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                         <button data-id="${batch.id}" class="view-details-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg">View & Purchase</button>
-                    </div>
-                </div>
-            `;
+             cardsHTML += `<div class="batch-card bg-white p-4 border border-gray-200 rounded-lg flex items-center justify-between">
+                <div class="flex items-center space-x-4 flex-grow"><img src="${batch.details.imageUrl}" alt="Crop Image" class="w-16 h-16 rounded-lg object-cover">
+                <div><p class="font-bold text-lg text-gray-800">${batch.details.crop}</p><p class="text-sm text-gray-500">${batch.details.quantity} &bull; ${translations[currentLanguage].farmerPrice}: ₹${batch.details.expectedPrice}/kg</p></div></div>
+                <div class="text-right ml-4"><button data-id="${batch.id}" class="view-details-btn btn-primary font-semibold py-2 px-5 text-sm">${translations[currentLanguage].viewAndPurchase}</button></div></div>`;
         });
-        cardsHTML += '</div>';
-        availableBatchesContainer.innerHTML = cardsHTML;
+        cardsHTML += '</div>'; availableBatchesContainer.innerHTML = cardsHTML;
     }
     
-    function advanceStage(batchId, actor, action, nextStatus, data = null) {
-        const batch = batches.find(b => b.id === batchId);
-        if (!batch) return;
-
-        const newBlock = {
-            index: batch.blockchain.length + 1,
-            timestamp: new Date().toLocaleString(),
-            actor, action, data
-        };
-        batch.blockchain.push(newBlock);
-        batch.status = nextStatus;
-        
-        openBatchModal(batchId); 
-        renderBatches();
+    function advanceStage(batchId, actor, actionKey, nextStatus, data = null) {
+        const batch = batches.find(b => b.id === batchId); if (!batch) return;
+        const newBlock = { index: batch.blockchain.length + 1, timestamp: new Date().toLocaleString(), actor, actionKey, data };
+        batch.blockchain.push(newBlock); batch.status = nextStatus;
+        openBatchModal(batchId); renderBatches();
     }
 
     function openBatchModal(batchId) {
-        const batch = batches.find(b => b.id === batchId);
-        if (!batch) return;
-
-        modalTitle.textContent = `Batch #${batch.id} - ${batch.details.crop}`;
+        const batch = batches.find(b => b.id === batchId); if (!batch) return;
+        modalTitle.textContent = translations[currentLanguage].batchModalTitle.replace('{batchId}', batch.id).replace('{cropName}', batch.details.crop);
         const isConsumer = currentUser.role === 'CONSUMER';
-        
-        let modalHTML = `
-            <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                <h4 class="text-lg font-semibold mb-3 text-gray-800">Initial Batch Information</h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="md:col-span-1">
-                        <img src="${batch.details.imageUrl}" alt="Harvested Crop" class="w-full h-auto rounded-lg object-cover">
-                    </div>
-                    <div class="md:col-span-2 text-sm text-gray-700 space-y-2">
-                        <p><strong>Quantity:</strong> ${batch.details.quantity}</p>
-                        <p><strong>Harvest Date:</strong> ${batch.details.harvestDate}</p>
-                        <p><strong>Initial Quality:</strong> <span class="font-semibold text-green-700">${batch.details.initialQuality}</span></p>
-                        <p><strong>Farmer's Expected Price:</strong> <span class="font-semibold text-green-700">₹${batch.details.expectedPrice} / kg</span></p>
-                    </div>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 ${isConsumer ? '' : 'md:grid-cols-2'} gap-6">`;
-        
+        let modalHTML = `<div class="grid grid-cols-1 ${isConsumer ? '' : 'md:grid-cols-2 gap-8'}">`;
         if (!isConsumer) {
-            modalHTML += `<div><h4 class="text-lg font-semibold mb-3">Actions</h4>`;
-            modalHTML += generateActionForms(batch);
-            modalHTML += `</div>`;
+            modalHTML += `<div><h4 class="text-xl font-semibold mb-4">${translations[currentLanguage].actions}</h4>`;
+            modalHTML += generateActionForms(batch); modalHTML += `</div>`;
         }
-        
-        modalHTML += `<div class="${isConsumer ? 'col-span-1' : ''}"><h4 class="text-lg font-semibold mb-3">Blockchain Ledger</h4><div class="space-y-3">`;
-        batch.blockchain.forEach(block => {
-            modalHTML += generateLedgerEntry(block);
-        });
+        modalHTML += `<div class="${isConsumer ? 'col-span-1' : ''}"><div class="bg-white p-6 rounded-lg border mb-6"><h4 class="text-xl font-semibold mb-4 text-gray-800">${translations[currentLanguage].initialInfoTitle}</h4><div class="flex items-start space-x-4"><img src="${batch.details.imageUrl}" alt="Harvested Crop" class="w-24 h-24 rounded-lg object-cover"><div class="text-sm text-gray-700 space-y-2"><p><strong>${translations[currentLanguage].quantity}:</strong> ${batch.details.quantity}</p><p><strong>${translations[currentLanguage].harvestDate}:</strong> ${batch.details.harvestDate}</p><p><strong>${translations[currentLanguage].initialQuality}:</strong> <span class="font-semibold text-green-700">${batch.details.initialQuality}</span></p><p><strong>${translations[currentLanguage].farmerPrice}:</strong> <span class="font-semibold text-green-700">₹${batch.details.expectedPrice} / kg</span></p></div></div></div><h4 class="text-xl font-semibold mb-4">${translations[currentLanguage].ledger}</h4><div class="space-y-3">`;
+        batch.blockchain.forEach(block => { modalHTML += generateLedgerEntry(block); });
         modalHTML += `</div></div></div>`;
-
-        modalContent.innerHTML = modalHTML;
-        modal.classList.add('show');
-
-        if (!isConsumer) {
-             addModalFormListeners(batchId);
-        }
+        modalContent.innerHTML = modalHTML; modal.classList.add('show');
+        if (!isConsumer) { addModalFormListeners(batchId); }
     }
-
+    
     function openQrCodeModal(batchId) {
         const batch = batches.find(b => b.id === batchId);
         if (!batch) return;
+
+        const qrModal = document.getElementById('qr-code-modal');
         const qrcodeContainer = document.getElementById('qrcode');
         qrcodeContainer.innerHTML = ''; 
-        new QRCode(qrcodeContainer, { text: `${batch.id}`, width: 200, height: 200 });
+
+        new QRCode(qrcodeContainer, {
+            text: `${batch.id}`,
+            width: 200,
+            height: 200
+        });
+
         document.getElementById('qr-batch-id').textContent = `ID: ${batch.id}`;
         qrModal.classList.add('show');
     }
-    
+
     function generateActionForms(batch) {
-        let formsHTML = '';
-        const canPerform = (role, status) => currentUser.role === role && batch.status === status;
-
-        if (canPerform('VERIFIER', 'PENDING_VERIFICATION')) {
-            formsHTML += `<div class="qa-form">
-                <p class="font-semibold text-purple-800">1. Authenticity Verification</p>
-                <p class="text-sm text-gray-600 my-2">Verify the farmer's credentials and land records.</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <button data-action="approve" class="action-verify-btn w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg">Approve Entry</button>
-                    <button data-action="reject" class="action-verify-btn w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg">Reject Entry</button>
-                </div>
-            </div>`;
-        }
-
-        if (canPerform('DISTRIBUTOR', 'VERIFIED')) {
-            formsHTML += `<div class="qa-form">
-                <p class="font-semibold text-blue-800">2. Distributor Purchase</p>
-                <p class="text-sm text-gray-600 my-2">Purchase this batch from the farmer. The transaction will be recorded on the blockchain.</p>
-                <button id="purchase-distributor-btn" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-blue-600 hover:bg-blue-700">Confirm Purchase</button>
-            </div>`;
-        }
-        
-        if (canPerform('AGENCY_INSPECTOR', 'SOLD_TO_DISTRIBUTOR')) {
-            formsHTML += `<form id="agency-qa-form" class="qa-form">
-                <p class="font-semibold text-teal-800">3. Quality & Price Verification</p>
-                 <div class="my-2"><label class="block text-sm font-medium">Final Quality Grade:</label><select id="agency-quality" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"><option>A (Premium)</option><option>B (Standard)</option><option>C (Sub-par)</option></select></div>
-                 <div class="my-2"><label class="block text-sm font-medium">Fair Price (₹/kg):</label><input type="number" step="0.01" id="agency-price" value="${batch.details.expectedPrice}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" required></div>
-                <button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-teal-600 hover:bg-teal-700">Certify Quality & Price</button>
-            </form>`;
-        }
-        
-        if (canPerform('RETAILER', 'QUALITY_PRICE_VERIFIED')) {
-             formsHTML += `<div class="qa-form">
-                <p class="font-semibold text-yellow-800">4. Retailer Purchase</p>
-                <p class="text-sm text-gray-600 my-2">Purchase this batch from the distributor to stock in your store.</p>
-                <button id="purchase-retailer-btn" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-yellow-600 hover:bg-yellow-700">Confirm Purchase</button>
-            </div>`;
-        }
-
-        if (formsHTML === '') {
-            formsHTML = `<p class="text-gray-500 p-4 bg-gray-100 rounded-lg">No actions available for you at this stage.</p>`;
-        }
-        
-        return formsHTML;
+        const steps = [
+            { role: 'VERIFIER', status: 'PENDING_VERIFICATION', title: '1. Authenticity Verification', desc: "Verify the farmer's credentials and records.", content: `<div class="grid grid-cols-2 gap-2"><button data-action="approve" class="action-verify-btn w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg">Approve</button><button data-action="reject" class="action-verify-btn w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg">Reject</button></div>` },
+            { role: 'DISTRIBUTOR', status: 'VERIFIED', title: '2. Distributor Purchase', desc: "Purchase this batch from the farmer.", content: `<button id="purchase-distributor-btn" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-blue-600 hover:bg-blue-700">Confirm Purchase</button>`},
+            { role: 'AGENCY_INSPECTOR', status: 'SOLD_TO_DISTRIBUTOR', title: '3. Quality & Price Verification', desc: "Certify the quality and fair market price.", content: `<form id="agency-qa-form"><div class="space-y-2 mb-4"><label class="block text-sm font-medium">Final Grade:</label><select id="agency-quality" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"><option>A (Premium)</option><option>B (Standard)</option><option>C (Sub-par)</option></select><label class="block text-sm font-medium">Fair Price (₹/kg):</label><input type="number" step="0.01" id="agency-price" value="${batch.details.expectedPrice}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" required></div><button type="submit" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-teal-600 hover:bg-teal-700">Certify</button></form>`},
+            { role: 'RETAILER', status: 'QUALITY_PRICE_VERIFIED', title: '4. Retailer Purchase', desc: 'Purchase this batch from the distributor.', content: `<button id="purchase-retailer-btn" class="w-full text-white font-bold py-2 px-4 rounded-lg btn-primary bg-amber-600 hover:bg-amber-700">Confirm Purchase</button>`}
+        ];
+        let stepperHTML = '<div>'; let actionTaken = false;
+        steps.forEach((step, index) => {
+            const isComplete = batch.blockchain.some(b => b.actor === step.role); const isActive = currentUser.role === step.role && batch.status === step.status;
+            let stepClass = isComplete ? 'step-complete' : ''; if (isActive) stepClass = 'step-active';
+            stepperHTML += `<div class="step ${stepClass}"><div class="step-icon">${isComplete ? '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>' : ''}</div><h5 class="font-semibold text-gray-800">${step.title}</h5><p class="text-sm text-gray-500">${step.desc}</p>`;
+            if (isActive) { actionTaken = true; stepperHTML += `<div class="mt-4 p-4 bg-white rounded-lg border">${step.content}</div>`; }
+            stepperHTML += `</div>`;
+        });
+        if (!actionTaken && batch.status !== 'READY_FOR_SALE') { stepperHTML += `<p class="mt-4 text-gray-500 p-4 bg-gray-100 rounded-lg text-center">No actions available for you at this stage.</p>`; }
+        stepperHTML += `</div>`; return stepperHTML;
     }
-
+    
     function addModalFormListeners(batchId) {
-        document.querySelectorAll('.action-verify-btn')?.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.dataset.action;
-                if (action === 'approve') {
-                    advanceStage(batchId, 'VERIFIER', 'Farmer Entry Verified', 'VERIFIED', { authenticity: 'Confirmed' });
-                } else {
-                    advanceStage(batchId, 'VERIFIER', 'Farmer Entry Rejected', 'REJECTED_BY_VERIFIER', { reason: 'Invalid credentials' });
-                }
-            });
-        });
-
-        document.getElementById('purchase-distributor-btn')?.addEventListener('click', () => {
-             const confirmPurchase = () => advanceStage(batchId, 'DISTRIBUTOR', 'Purchase from Farmer', 'SOLD_TO_DISTRIBUTOR', { transaction: 'Payment Confirmed' });
-             showUpiPaymentModal(confirmPurchase);
-        });
-
-        document.getElementById('agency-qa-form')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const finalGrade = document.getElementById('agency-quality').value;
-            const fairPrice = document.getElementById('agency-price').value;
-            advanceStage(batchId, 'AGENCY_INSPECTOR', 'Quality & Price Certified', 'QUALITY_PRICE_VERIFIED', { finalGrade, fairPrice: `₹${fairPrice}/kg` });
-        });
-        
-         document.getElementById('purchase-retailer-btn')?.addEventListener('click', () => {
-             const confirmPurchase = () => advanceStage(batchId, 'RETAILER', 'Purchase from Distributor', 'READY_FOR_SALE', { transaction: 'Payment Confirmed' });
-             showUpiPaymentModal(confirmPurchase);
-        });
+        document.querySelectorAll('.action-verify-btn')?.forEach(btn => btn.addEventListener('click', () => {
+            if (btn.dataset.action === 'approve') { advanceStage(batchId, 'VERIFIER', 'action_FarmerEntryVerified', 'VERIFIED', { authenticity: 'Confirmed' }); } 
+            else { advanceStage(batchId, 'VERIFIER', 'action_FarmerEntryRejected', 'REJECTED_BY_VERIFIER', { reason: 'Invalid credentials' }); }
+        }));
+        document.getElementById('purchase-distributor-btn')?.addEventListener('click', () => showUpiPaymentModal(() => advanceStage(batchId, 'DISTRIBUTOR', 'action_PurchaseFromFarmer', 'SOLD_TO_DISTRIBUTOR', { transaction: 'Payment Confirmed' })));
+        document.getElementById('agency-qa-form')?.addEventListener('submit', (e) => { e.preventDefault(); advanceStage(batchId, 'AGENCY_INSPECTOR', 'action_QualityPriceCertified', 'QUALITY_PRICE_VERIFIED', { finalGrade: document.getElementById('agency-quality').value, fairPrice: `₹${document.getElementById('agency-price').value}/kg` }); });
+        document.getElementById('purchase-retailer-btn')?.addEventListener('click', () => showUpiPaymentModal(() => advanceStage(batchId, 'RETAILER', 'action_PurchaseFromDistributor', 'READY_FOR_SALE', { transaction: 'Payment Confirmed' })));
     }
 
     function generateLedgerEntry(block) {
         const icons = { 'FARMER': '🌱', 'VERIFIER': '🔍', 'DISTRIBUTOR': '🚚', 'AGENCY_INSPECTOR': '✅', 'RETAILER': '🛒', 'CONSUMER': '🧑' };
-        const colors = { 'FARMER': 'green', 'VERIFIER': 'purple', 'DISTRIBUTOR': 'blue', 'AGENCY_INSPECTOR': 'teal', 'RETAILER': 'yellow' };
-        
-        let actor = block.actor;
-        if (actor === 'VERIFIER' && block.action.includes('Rejected')) {
-            icons.VERIFIER = '❌';
-            colors.VERIFIER = 'red';
-        }
-        
-        let dataHTML = '';
-        if (block.data) {
-             let dataContent = Object.entries(block.data).map(([key, value]) => `<span class="font-semibold">${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</span> ${value}`).join('; ');
-             dataHTML = `<p class="text-xs text-gray-600 mt-1 bg-gray-100 p-2 rounded-md"><strong>Data:</strong> ${dataContent}</p>`;
-        }
-
-        return `
-            <div class="p-3 rounded-lg ledger-entry border-${colors[actor]}-500 bg-${colors[actor]}-50">
-                <div class="flex items-start">
-                    <span class="text-xl mr-3">${icons[actor]}</span>
-                    <div>
-                        <p class="font-semibold text-sm text-${colors[actor]}-800">${block.action}</p>
-                        <p class="text-xs text-gray-600">${block.actor} @ ${block.timestamp}</p>
-                        ${dataHTML}
-                    </div>
-                </div>
-            </div>`;
+        const colors = { 'FARMER': 'green', 'VERIFIER': 'purple', 'DISTRIBUTOR': 'blue', 'AGENCY_INSPECTOR': 'teal', 'RETAILER': 'amber' };
+        let actor = block.actor; if (actor === 'VERIFIER' && block.actionKey.includes('Rejected')) { icons.VERIFIER = '❌'; colors.VERIFIER = 'red'; }
+        let dataHTML = ''; if (block.data) { let dataContent = Object.entries(block.data).map(([key, value]) => `<span class="font-semibold">${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</span> ${value}`).join('; '); dataHTML = `<p class="text-xs text-gray-600 mt-1 bg-gray-100 p-2 rounded-md"><strong>Data:</strong> ${dataContent}</p>`; }
+        return `<div class="p-3 rounded-lg ledger-entry border-${colors[actor]}-500 bg-white shadow-sm border"><div class="flex items-start"><span class="text-xl mr-3">${icons[actor]}</span><div><p class="font-semibold text-sm text-${colors[actor]}-800">${translations[currentLanguage][block.actionKey] || block.actionKey}</p><p class="text-xs text-gray-500">${block.actor} @ ${block.timestamp}</p>${dataHTML}</div></div></div>`;
     }
     
     function getStatusInfo(status) {
-        const statuses = {
-            'PENDING_VERIFICATION': { text: 'Pending Verification', textColor: 'text-purple-800', bgColor: 'bg-purple-100' },
-            'VERIFIED': { text: 'Verified', textColor: 'text-green-800', bgColor: 'bg-green-100' },
-            'SOLD_TO_DISTRIBUTOR': { text: 'With Distributor', textColor: 'text-blue-800', bgColor: 'bg-blue-100' },
-            'QUALITY_PRICE_VERIFIED': { text: 'Agency Verified', textColor: 'text-teal-800', bgColor: 'bg-teal-100' },
-            'READY_FOR_SALE': { text: 'At Retailer', textColor: 'text-yellow-800', bgColor: 'bg-yellow-100' },
-            'REJECTED_BY_VERIFIER': { text: 'Rejected', textColor: 'text-red-800', bgColor: 'bg-red-100' }
-        };
-        return statuses[status] || { text: 'Unknown', textColor: 'text-gray-800', bgColor: 'bg-gray-100' };
+        const statuses = { 'PENDING_VERIFICATION': { textKey: 'status_PENDING_VERIFICATION', textColor: 'text-purple-800', bgColor: 'bg-purple-100' }, 'VERIFIED': { textKey: 'status_VERIFIED', textColor: 'text-green-800', bgColor: 'bg-green-100' }, 'SOLD_TO_DISTRIBUTOR': { textKey: 'status_SOLD_TO_DISTRIBUTOR', textColor: 'text-blue-800', bgColor: 'bg-blue-100' }, 'QUALITY_PRICE_VERIFIED': { textKey: 'status_QUALITY_PRICE_VERIFIED', textColor: 'text-teal-800', bgColor: 'bg-teal-100' }, 'READY_FOR_SALE': { textKey: 'status_READY_FOR_SALE', textColor: 'text-amber-800', bgColor: 'bg-amber-100' }, 'REJECTED_BY_VERIFIER': { textKey: 'status_REJECTED_BY_VERIFIER', textColor: 'text-red-800', bgColor: 'bg-red-100' } };
+        const statusInfo = statuses[status] || { text: 'Unknown', textColor: 'text-gray-800', bgColor: 'bg-gray-100' };
+        return { ...statusInfo, text: translations[currentLanguage][statusInfo.textKey] || 'Unknown Status' };
     }
 
-
-    // --- Event Listeners ---
-    loginForm.addEventListener('submit', handleLogin);
+    // --- Event Listeners and other functions ---
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
     logoutBtn.addEventListener('click', handleLogout);
-    
-    cropImageInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            imagePreview.src = URL.createObjectURL(file);
-            imagePreview.classList.remove('hidden');
-        }
-    });
-
+    languageSwitcher.addEventListener('change', (e) => setLanguage(e.target.value));
+    cropImageInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file) { imagePreview.src = URL.createObjectURL(file); imagePreview.classList.remove('hidden'); } });
     farmForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        
-        const crop = document.getElementById('crop-type').value;
-        const quantity = document.getElementById('quantity').value;
-        const expectedPrice = document.getElementById('expected-price').value;
-        const initialQuality = document.getElementById('initial-quality').value;
-        const harvestDate = document.getElementById('harvest-date').value;
-        const imageFile = document.getElementById('crop-image').files[0];
-
-        if (!harvestDate || !imageFile || !expectedPrice) {
-            alert("Please fill out all fields, including price, date, and image.");
-            return;
-        }
-
-        const newBatch = {
-            id: Date.now(),
-            details: { 
-                crop, 
-                quantity: `${quantity} kg`,
-                expectedPrice,
-                initialQuality,
-                harvestDate,
-                imageUrl: URL.createObjectURL(imageFile)
-            },
-            status: 'PENDING_VERIFICATION',
-            blockchain: [{
-                index: 1,
-                timestamp: new Date().toLocaleString(),
-                actor: 'FARMER',
-                action: 'Batch Created (Genesis Block)',
-                data: { origin: 'Odisha Farm Co-op', harvestDate, initialQuality, expectedPrice: `₹${expectedPrice}/kg` }
-            }]
-        };
-
-        batches.push(newBatch);
-        renderBatches();
-        farmForm.reset();
-        imagePreview.classList.add('hidden');
+        const newBatch = { id: Date.now(), details: { crop: document.getElementById('crop-type').value, quantity: `${document.getElementById('quantity').value} kg`, expectedPrice: document.getElementById('expected-price').value, initialQuality: document.getElementById('initial-quality').value, harvestDate: document.getElementById('harvest-date').value, imageUrl: URL.createObjectURL(document.getElementById('crop-image').files[0]) }, status: 'PENDING_VERIFICATION', blockchain: [{ index: 1, timestamp: new Date().toLocaleString(), actor: 'FARMER', actionKey: 'action_BatchCreated', data: { origin: 'Odisha Farm Co-op', harvestDate: document.getElementById('harvest-date').value, initialQuality: document.getElementById('initial-quality').value, expectedPrice: `₹${document.getElementById('expected-price').value}/kg` } }] };
+        if (!newBatch.details.harvestDate || !newBatch.details.imageUrl || !newBatch.details.expectedPrice) { alert(translations[currentLanguage].alert_fillAllFields); return; }
+        batches.push(newBatch); renderBatches(); farmForm.reset(); imagePreview.classList.add('hidden');
     });
-
     scanForm.addEventListener('submit', e => {
-        e.preventDefault();
-        const batchId = parseInt(scanInput.value);
-        const batch = batches.find(b => b.id === batchId);
-        if (batch) {
-            openBatchModal(batchId);
-            scanError.classList.add('hidden');
-            scanInput.value = '';
-        } else {
-            scanError.classList.remove('hidden');
-        }
+        e.preventDefault(); const batch = batches.find(b => b.id === parseInt(scanInput.value));
+        if (batch) { openBatchModal(batch.id); scanError.classList.add('hidden'); scanInput.value = ''; } 
+        else { scanError.classList.remove('hidden'); }
     });
-
     batchListContainer.addEventListener('click', (e) => {
-        const target = e.target.closest('button');
-        if (target) {
-            const batchId = parseInt(target.dataset.id);
+        const target = e.target.closest('button'); if (target) { const batchId = parseInt(target.dataset.id);
             if (target.classList.contains('view-details-btn')) openBatchModal(batchId);
-            if (target.classList.contains('show-qr-btn')) openQrCodeModal(batchId);
-        }
+            if (target.classList.contains('show-qr-btn')) openQrCodeModal(batchId); }
     });
-    
-    availableBatchesContainer.addEventListener('click', (e) => {
-        const target = e.target.closest('button.view-details-btn');
-        if(target) {
-            const batchId = parseInt(target.dataset.id);
-            openBatchModal(batchId);
-        }
-    });
-    
-    // --- QR Scanner Logic ---
-    const startScanner = () => {
-        qrScannerModal.classList.add('show');
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-        const onScanSuccess = (decodedText, decodedResult) => {
-            scanInput.value = decodedText;
-            stopScanner();
-            scanForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-        };
-        const onScanFailure = (error) => { /* ignore */ };
-        
-        try {
-            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure);
-        } catch (err) {
-            console.error("QR Scanner start failed", err);
-        }
-    };
-
-    const stopScanner = () => {
-        try {
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(() => qrScannerModal.classList.remove('show'));
-            } else {
-                 qrScannerModal.classList.remove('show');
-            }
-        } catch (err) {
-            console.error("QR Scanner stop failed", err);
-            qrScannerModal.classList.remove('show');
-        }
-    };
-
+    availableBatchesContainer.addEventListener('click', (e) => { const target = e.target.closest('button.view-details-btn'); if(target) { openBatchModal(parseInt(target.dataset.id)); } });
+    const startScanner = () => { document.getElementById('qr-scanner-modal').classList.add('show'); const onScanSuccess = (decodedText) => { scanInput.value = decodedText; stopScanner(); scanForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true })); }; try { html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, () => {}); } catch (err) { console.error("QR Scanner start failed", err); } };
+    const stopScanner = () => { const scannerModal = document.getElementById('qr-scanner-modal'); try { if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().then(() => scannerModal.classList.remove('show')); } else { scannerModal.classList.remove('show'); } } catch (err) { console.error("QR Scanner stop failed", err); scannerModal.classList.remove('show'); } };
     scanQrBtn.addEventListener('click', startScanner);
-    closeScannerModalBtn.addEventListener('click', stopScanner);
-
-    closeModalBtn.addEventListener('click', () => {
-        modal.classList.remove('show');
-        if (['DISTRIBUTOR', 'RETAILER'].includes(currentUser?.role)) {
-            renderAvailableBatches();
-        }
-    });
-    modal.addEventListener('click', (e) => { if (e.target === modal) closeModalBtn.click(); });
-
-    closeQrModalBtn.addEventListener('click', () => qrModal.classList.remove('show'));
-    qrModal.addEventListener('click', (e) => { if (e.target === qrModal) qrModal.classList.remove('show'); });
-    
-    howToUseBtn.addEventListener('click', () => instructionsModal.classList.add('show'));
-    closeInstructionsModalBtn.addEventListener('click', () => instructionsModal.classList.remove('show'));
-    instructionsModal.addEventListener('click', (e) => { if (e.target === instructionsModal) instructionsModal.classList.remove('show'); });
-
-    printQrBtn.addEventListener('click', () => {
-        const qrContent = document.getElementById('qrcode').innerHTML;
-        const batchIdText = document.getElementById('qr-batch-id').textContent;
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`<html><head><title>Print QR Code</title></head><body style="text-align:center; font-family: sans-serif; padding-top: 2rem;"><h2>AgriTrace Batch</h2>${qrContent}<p style="font-family: monospace;">${batchIdText}</p><script>window.onload = function() { window.print(); window.close(); }<\/script></body></html>`);
-        printWindow.document.close();
-    });
-
-    // --- UPI Payment Logic ---
-    function showUpiPaymentModal(onConfirm) {
-        currentPaymentCallback = onConfirm;
-        upiInitialView.style.display = 'block';
-        upiProcessingView.classList.add('hidden');
-        upiSuccessView.classList.add('hidden');
-        upiPaymentModal.classList.add('show');
-    }
-
-    function hideUpiPaymentModal() {
-        upiPaymentModal.classList.remove('show');
-        currentPaymentCallback = null;
-    }
-
-    payUpiBtn.addEventListener('click', () => {
-        upiInitialView.style.display = 'none';
-        upiProcessingView.classList.remove('hidden');
-
-        setTimeout(() => {
-            upiProcessingView.classList.add('hidden');
-            upiSuccessView.classList.remove('hidden');
-
-            setTimeout(() => {
-                if (currentPaymentCallback) {
-                    currentPaymentCallback();
-                }
-                hideUpiPaymentModal();
-            }, 1500); // Show success message
-        }, 2500); // Simulate processing time
-    });
-
-    cancelUpiBtn.addEventListener('click', hideUpiPaymentModal);
-
+    document.getElementById('close-scanner-modal').addEventListener('click', stopScanner);
+    closeModalBtn.addEventListener('click', () => { modal.classList.remove('show'); if (currentUser && ['DISTRIBUTOR', 'RETAILER'].includes(currentUser.role)) { renderAvailableBatches(); } });
+    document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('show'); }));
+    document.getElementById('close-qr-modal').addEventListener('click', () => document.getElementById('qr-code-modal').classList.remove('show'));
+    document.getElementById('how-to-use-btn').addEventListener('click', () => document.getElementById('instructions-modal').classList.add('show'));
+    document.getElementById('close-instructions-modal').addEventListener('click', () => document.getElementById('instructions-modal').classList.remove('show'));
+    document.getElementById('cancel-upi-btn').addEventListener('click', () => document.getElementById('upi-payment-modal').classList.remove('show'));
+    document.getElementById('print-qr').addEventListener('click', () => { const printWindow = window.open('', '_blank'); printWindow.document.write(`<html><head><title>Print QR</title></head><body style="text-align:center;font-family:sans-serif;padding-top:2rem;"><h2>AgriTrace Batch</h2>${document.getElementById('qrcode').innerHTML}<p style="font-family:monospace;">${document.getElementById('qr-batch-id').textContent}</p><script>window.onload=function(){window.print();window.close();}<\/script></body></html>`); printWindow.document.close(); });
+    function showUpiPaymentModal(onConfirm) { currentPaymentCallback = onConfirm; document.getElementById('upi-initial-view').style.display = 'block'; document.getElementById('upi-processing-view').classList.add('hidden'); document.getElementById('upi-success-view').classList.add('hidden'); document.getElementById('upi-payment-modal').classList.add('show'); }
+    document.getElementById('pay-upi-btn').addEventListener('click', () => { document.getElementById('upi-initial-view').style.display = 'none'; document.getElementById('upi-processing-view').classList.remove('hidden'); setTimeout(() => { document.getElementById('upi-processing-view').classList.add('hidden'); document.getElementById('upi-success-view').classList.remove('hidden'); setTimeout(() => { if (currentPaymentCallback) { currentPaymentCallback(); } document.getElementById('upi-payment-modal').classList.remove('show'); }, 1500); }, 2500); });
+    document.addEventListener('DOMContentLoaded', () => { setLanguage(localStorage.getItem('agriTraceLang') || 'en'); });
     </script>
 </body>
 </html>
+
 
